@@ -1,0 +1,1 @@
+Congratulations {{ household.head_name }}! Your {{ grant_type }} grant application for KES {{ amount }} has been approved. Contact your mentor for next steps. UPG System

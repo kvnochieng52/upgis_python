@@ -1,0 +1,598 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">{{ page_title }}</h3>
+                    <div class="card-tools">
+                        <!-- Debug: Always show button for testing -->
+                        <button type="button" class="btn btn-primary btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#createTrainingModal"
+                                onclick="console.log('Button clicked!');">
+                            <i class="fas fa-plus"></i> Schedule Training
+                        </button>
+                        <!-- Test simple modal button -->
+                        <button type="button" class="btn btn-success btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#testModal">
+                            Test Modal
+                        </button>
+                        <!-- Permission check: {% if perms.can_create_training %}YES{% else %}NO{% endif %} -->
+                        <span class="badge bg-info">{{ total_count }} total</span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    {% if training_sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Training Name</th>
+                                    <th>Module ID</th>
+                                    <th>BM Cycle</th>
+                                    <th>Mentor</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>Enrolled</th>
+                                    <th>Start Date</th>
+                                    <th>Quick Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for training in training_sessions %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ training.name }}</strong>
+                                        {% if training.description %}
+                                        <br><small class="text-muted">{{ training.description|truncatechars:50 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ training.module_id }}</span>
+                                    </td>
+                                    <td>
+                                        {% if training.bm_cycle %}
+                                        {{ training.bm_cycle.bm_cycle_name }}
+                                        {% else %}
+                                        <span class="text-muted">Not assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if training.assigned_mentor %}
+                                        {{ training.assigned_mentor.get_full_name|default:training.assigned_mentor.username }}
+                                        {% else %}
+                                        <span class="text-muted">No mentor assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if training.status == 'planned' %}
+                                        <span class="badge bg-secondary">{{ training.get_status_display }}</span>
+                                        {% elif training.status == 'active' %}
+                                        <span class="badge bg-success">{{ training.get_status_display }}</span>
+                                        {% elif training.status == 'completed' %}
+                                        <span class="badge bg-primary">{{ training.get_status_display }}</span>
+                                        {% elif training.status == 'cancelled' %}
+                                        <span class="badge bg-danger">{{ training.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if training.time_taken %}
+                                        {{ training.time_taken }}
+                                        {% else %}
+                                        <span class="text-muted">Not set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ training.enrolled_households_count }}/{{ training.max_households }}</span>
+                                        {% if training.available_slots <= 0 %}
+                                        <small class="text-danger d-block">Full</small>
+                                        {% else %}
+                                        <small class="text-success d-block">{{ training.available_slots }} slots</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if training.start_date %}
+                                        {{ training.start_date }}
+                                        {% else %}
+                                        <span class="text-muted">Not scheduled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <!-- View Details -->
+                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    onclick="viewTrainingDetails({{ training.id }})"
+                                                    title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+
+                                            {% if perms.can_edit_training %}
+                                            <!-- Edit Training -->
+                                            <button type="button" class="btn btn-outline-warning btn-sm"
+                                                    onclick="editTraining({{ training.id }})"
+                                                    title="Edit Training">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            {% endif %}
+
+                                            {% if training.status == 'planned' and perms.can_manage_training %}
+                                            <!-- Start Training -->
+                                            <button type="button" class="btn btn-outline-success btn-sm"
+                                                    onclick="startTraining({{ training.id }})"
+                                                    title="Start Training">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                            {% elif training.status == 'active' and perms.can_manage_training %}
+                                            <!-- Complete Training -->
+                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                    onclick="completeTraining({{ training.id }})"
+                                                    title="Mark Complete">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            {% endif %}
+
+                                            <!-- Attendance -->
+                                            {% if training.status == 'active' or training.status == 'completed' %}
+                                            <button type="button" class="btn btn-outline-info btn-sm"
+                                                    onclick="manageAttendance({{ training.id }})"
+                                                    title="Manage Attendance">
+                                                <i class="fas fa-users"></i>
+                                            </button>
+                                            {% endif %}
+
+                                            {% if perms.can_delete_training %}
+                                            <!-- Delete Training -->
+                                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="deleteTraining({{ training.id }}, '{{ training.name|escapejs }}')"
+                                                    title="Delete Training">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chalkboard-teacher fa-3x text-muted mb-3"></i>
+                        <h4>No Training Sessions Found</h4>
+                        <p class="text-muted">
+                            {% if user.role == 'mentor' %}
+                            You haven't been assigned to any training sessions yet.
+                            {% else %}
+                            No training sessions have been created yet.
+                            {% endif %}
+                        </p>
+                        {% if perms.can_create_training %}
+                        <button type="button" class="btn btn-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#createTrainingModal">
+                            <i class="fas fa-plus"></i> Create First Training
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Details Modal -->
+<div class="modal fade" id="trainingDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Training Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="trainingDetailsContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Management Modal -->
+<div class="modal fade" id="attendanceModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Attendance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="attendanceContent">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Schedule Training Modal -->
+<div class="modal fade" id="createTrainingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Schedule New Training</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'training:create_training' %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="trainingName" class="form-label">Training Name *</label>
+                                <input type="text" class="form-control" id="trainingName" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="moduleId" class="form-label">Module ID *</label>
+                                <input type="text" class="form-control" id="moduleId" name="module_id" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bmCycle" class="form-label">BM Cycle</label>
+                                <select class="form-select" id="bmCycle" name="bm_cycle">
+                                    <option value="">Select BM Cycle...</option>
+                                    <!-- Options will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="assignedMentor" class="form-label">Assigned Mentor</label>
+                                <select class="form-select" id="assignedMentor" name="assigned_mentor">
+                                    <option value="">Select Mentor...</option>
+                                    <!-- Options will be loaded via AJAX -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="startDate" name="start_date">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="maxHouseholds" class="form-label">Max Households</label>
+                                <input type="number" class="form-control" id="maxHouseholds" name="max_households" value="25" min="1" max="50">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="timeTaken" class="form-label">Duration (Hours)</label>
+                                <input type="number" class="form-control" id="timeTaken" name="time_taken_hours" step="0.5" min="0.5">
+                                <small class="text-muted">Training duration in hours</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="planned">Planned</option>
+                                    <option value="active">Active</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+
+                    <div id="createTrainingErrors" class="alert alert-danger d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus"></i> Schedule Training
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Quick Actions JavaScript Functions
+
+function viewTrainingDetails(trainingId) {
+    // Load training details via AJAX
+    fetch(`/training/${trainingId}/details/`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('trainingDetailsContent').innerHTML = html;
+            new bootstrap.Modal(document.getElementById('trainingDetailsModal')).show();
+        })
+        .catch(error => {
+            console.error('Error loading training details:', error);
+            alert('Error loading training details. Please try again.');
+        });
+}
+
+function editTraining(trainingId) {
+    // Navigate to edit page or open edit modal
+    window.location.href = `/training/${trainingId}/edit/`;
+}
+
+function startTraining(trainingId) {
+    if (confirm('Are you sure you want to start this training? This will change its status to Active.')) {
+        // AJAX call to start training
+        fetch(`/training/${trainingId}/start/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error starting training');
+            }
+        })
+        .catch(error => {
+            console.error('Error starting training:', error);
+            alert('Error starting training. Please try again.');
+        });
+    }
+}
+
+function completeTraining(trainingId) {
+    if (confirm('Are you sure you want to mark this training as complete?')) {
+        // AJAX call to complete training
+        fetch(`/training/${trainingId}/complete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error completing training');
+            }
+        })
+        .catch(error => {
+            console.error('Error completing training:', error);
+            alert('Error completing training. Please try again.');
+        });
+    }
+}
+
+function manageAttendance(trainingId) {
+    console.log('Loading attendance management for training ID:', trainingId);
+
+    // Show loading state
+    const attendanceContent = document.getElementById('attendanceContent');
+    attendanceContent.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x"></i><br><br>Loading attendance...</div>';
+
+    // Show modal immediately with loading state
+    new bootstrap.Modal(document.getElementById('attendanceModal')).show();
+
+    // Load attendance management interface
+    fetch(`/training/${trainingId}/attendance/`)
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.text();
+        })
+        .then(html => {
+            console.log('Attendance content loaded successfully');
+            attendanceContent.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error loading attendance interface:', error);
+            attendanceContent.innerHTML = `
+                <div class="alert alert-danger">
+                    <h6>Error Loading Attendance</h6>
+                    <p>Failed to load attendance interface: ${error.message}</p>
+                    <button type="button" class="btn btn-primary" onclick="manageAttendance(${trainingId})">
+                        <i class="fas fa-redo"></i> Retry
+                    </button>
+                </div>
+            `;
+        });
+}
+
+function deleteTraining(trainingId, trainingName) {
+    if (confirm(`Are you sure you want to delete "${trainingName}"? This action cannot be undone.`)) {
+        // AJAX call to delete training
+        fetch(`/training/${trainingId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Error deleting training');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting training:', error);
+            alert('Error deleting training. Please try again.');
+        });
+    }
+}
+
+// Bootstrap Modal functionality
+console.log('Training page loaded, Bootstrap version:', bootstrap?.VERSION || 'Not available');
+
+// Create Training Form Handling
+document.addEventListener('DOMContentLoaded', function() {
+    // Add CSRF token to page for AJAX requests
+    if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfToken);
+    }
+
+    // Load dropdown options when modal is shown
+    document.getElementById('createTrainingModal').addEventListener('show.bs.modal', function() {
+        loadBMCycles();
+        loadMentors();
+    });
+
+    // Handle form submission - using standard form submission
+    // document.getElementById('createTrainingForm').addEventListener('submit', function(e) {
+    //     e.preventDefault();
+    //     createTraining();
+    // });
+});
+
+function loadBMCycles() {
+    fetch('/core/api/bm-cycles/')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('bmCycle');
+            select.innerHTML = '<option value="">Select BM Cycle...</option>';
+            data.forEach(cycle => {
+                select.innerHTML += `<option value="${cycle.id}">${cycle.bm_cycle_name}</option>`;
+            });
+        })
+        .catch(error => {
+            console.error('Error loading BM cycles:', error);
+        });
+}
+
+function loadMentors() {
+    fetch('/core/api/mentors/')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('assignedMentor');
+            select.innerHTML = '<option value="">Select Mentor...</option>';
+            data.forEach(mentor => {
+                select.innerHTML += `<option value="${mentor.id}">${mentor.full_name}</option>`;
+            });
+        })
+        .catch(error => {
+            console.error('Error loading mentors:', error);
+        });
+}
+
+function createTraining() {
+    const form = document.getElementById('createTrainingForm');
+    const formData = new FormData(form);
+
+    // Convert hours to Django DurationField format
+    const hours = formData.get('time_taken_hours');
+    if (hours) {
+        formData.set('time_taken', `${hours}:00:00`);
+    }
+    formData.delete('time_taken_hours');
+
+    // Hide previous errors
+    document.getElementById('createTrainingErrors').classList.add('d-none');
+
+    fetch('/training/create/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and reload page
+            bootstrap.Modal.getInstance(document.getElementById('createTrainingModal')).hide();
+            location.reload();
+        } else {
+            // Show errors
+            const errorDiv = document.getElementById('createTrainingErrors');
+            errorDiv.innerHTML = '';
+            if (data.errors) {
+                Object.keys(data.errors).forEach(field => {
+                    data.errors[field].forEach(error => {
+                        errorDiv.innerHTML += `<p><strong>${field}:</strong> ${error}</p>`;
+                    });
+                });
+            } else {
+                errorDiv.innerHTML = `<p>${data.message || 'Error creating training'}</p>`;
+            }
+            errorDiv.classList.remove('d-none');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating training:', error);
+        const errorDiv = document.getElementById('createTrainingErrors');
+        errorDiv.innerHTML = '<p>Error creating training. Please try again.</p>';
+        errorDiv.classList.remove('d-none');
+    });
+}
+</script>
+
+<!-- Simple Test Modal -->
+<div class="modal fade" id="testModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test Modal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>This is a simple test modal to verify Bootstrap is working.</p>
+                <p>Bootstrap version: <span id="bootstrapVersion"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Debug Bootstrap version
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded');
+    console.log('Bootstrap available:', typeof bootstrap !== 'undefined');
+    if (typeof bootstrap !== 'undefined') {
+        document.getElementById('bootstrapVersion').textContent = 'Available';
+    } else {
+        document.getElementById('bootstrapVersion').textContent = 'Not available';
+    }
+});
+</script>
+{% endblock %}

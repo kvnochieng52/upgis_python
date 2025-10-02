@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-road"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'households:graduation_dashboard' %}" class="btn btn-info btn-sm">
+                <i class="fas fa-graduation-cap"></i> Graduation Dashboard
+            </a>
+            <a href="{% url 'households:household_detail' household.id %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Household
+            </a>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-line"></i> Overall Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-3" style="height: 30px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                             style="width: {{ progress_percentage }}%"
+                             aria-valuenow="{{ progress_percentage }}"
+                             aria-valuemin="0" aria-valuemax="100">
+                            {{ progress_percentage|floatformat:1 }}%
+                        </div>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <h4 class="text-success">{{ completed_count }}</h4>
+                            <small class="text-muted">Completed Milestones</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h4 class="text-primary">{{ total_milestones }}</h4>
+                            <small class="text-muted">Total Milestones</small>
+                        </div>
+                        <div class="col-md-4">
+                            <h4 class="text-info">{{ household_program.program.name }}</h4>
+                            <small class="text-muted">Program</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-user"></i> Household Info
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ household.name }}</p>
+                    <p><strong>Village:</strong> {{ household.village.name|default:"Not assigned" }}</p>
+                    <p><strong>Phone:</strong> {{ household.phone_number|default:"Not provided" }}</p>
+                    <p><strong>Enrolled:</strong> {{ household_program.enrollment_date|date:"M d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Milestones Timeline -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-tasks"></i> 12-Month Graduation Milestones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="milestone-timeline">
+                        {% for milestone in milestones %}
+                        <div class="milestone-item {% if milestone.status == 'completed' %}completed{% elif milestone.status == 'in_progress' %}in-progress{% elif milestone.is_overdue %}overdue{% endif %}">
+                            <div class="milestone-marker">
+                                {% if milestone.status == 'completed' %}
+                                <i class="fas fa-check-circle text-success"></i>
+                                {% elif milestone.status == 'in_progress' %}
+                                <i class="fas fa-play-circle text-info"></i>
+                                {% elif milestone.is_overdue %}
+                                <i class="fas fa-exclamation-circle text-danger"></i>
+                                {% else %}
+                                <i class="fas fa-circle text-muted"></i>
+                                {% endif %}
+                            </div>
+                            <div class="milestone-content">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="card-title">{{ milestone.get_milestone_display }}</h6>
+
+                                                <div class="milestone-status mb-2">
+                                                    <span class="badge bg-{% if milestone.status == 'completed' %}success{% elif milestone.status == 'in_progress' %}info{% elif milestone.status == 'delayed' %}warning{% elif milestone.status == 'skipped' %}secondary{% else %}light{% endif %}">
+                                                        {{ milestone.get_status_display }}
+                                                    </span>
+
+                                                    {% if milestone.target_date %}
+                                                    <small class="text-muted ms-2">
+                                                        Target: {{ milestone.target_date|date:"M d, Y" }}
+                                                        {% if milestone.is_overdue %}
+                                                        <span class="text-danger">(Overdue)</span>
+                                                        {% endif %}
+                                                    </small>
+                                                    {% endif %}
+                                                </div>
+
+                                                {% if milestone.completion_date %}
+                                                <p class="mb-1">
+                                                    <i class="fas fa-calendar-check text-success"></i>
+                                                    Completed: {{ milestone.completion_date|date:"M d, Y" }}
+                                                    {% if milestone.completed_by %}
+                                                    by {{ milestone.completed_by.get_full_name|default:milestone.completed_by.username }}
+                                                    {% endif %}
+                                                </p>
+                                                {% endif %}
+
+                                                {% if milestone.notes %}
+                                                <p class="card-text">
+                                                    <i class="fas fa-sticky-note text-info"></i>
+                                                    {{ milestone.notes }}
+                                                </p>
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="milestone-actions">
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#updateMilestoneModal"
+                                                        onclick="editMilestone({{ milestone.id }}, '{{ milestone.get_milestone_display|escapejs }}', '{{ milestone.status }}', '{{ milestone.target_date|date:"Y-m-d"|default:"" }}', '{{ milestone.notes|escapejs }}')">
+                                                    <i class="fas fa-edit"></i> Update
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Milestone Modal -->
+<div class="modal fade" id="updateMilestoneModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Milestone</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="updateMilestoneForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" id="milestoneId" name="milestone_id">
+
+                    <div class="mb-3">
+                        <label class="form-label">Milestone</label>
+                        <p id="milestoneTitle" class="form-control-plaintext"></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="milestoneStatus" class="form-label">Status</label>
+                        <select class="form-select" id="milestoneStatus" name="status" required>
+                            {% for choice in milestones.0.STATUS_CHOICES %}
+                            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="milestoneTargetDate" class="form-label">Target Date</label>
+                        <input type="date" class="form-control" id="milestoneTargetDate" name="target_date">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="milestoneNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="milestoneNotes" name="notes" rows="3"></textarea>
+                    </div>
+
+                    <div id="updateMilestoneErrors" class="alert alert-danger d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.milestone-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.milestone-timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #007bff, #28a745);
+}
+
+.milestone-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 40px;
+}
+
+.milestone-marker {
+    position: absolute;
+    left: -25px;
+    top: 15px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 50%;
+    font-size: 18px;
+    z-index: 1;
+}
+
+.milestone-item.completed .milestone-marker {
+    background: #28a745;
+    color: white;
+}
+
+.milestone-item.in-progress .milestone-marker {
+    background: #17a2b8;
+    color: white;
+}
+
+.milestone-item.overdue .milestone-marker {
+    background: #dc3545;
+    color: white;
+}
+
+.milestone-content .card {
+    border-left: 4px solid #dee2e6;
+}
+
+.milestone-item.completed .milestone-content .card {
+    border-left-color: #28a745;
+}
+
+.milestone-item.in-progress .milestone-content .card {
+    border-left-color: #17a2b8;
+}
+
+.milestone-item.overdue .milestone-content .card {
+    border-left-color: #dc3545;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentMilestoneId = null;
+
+function editMilestone(id, title, status, targetDate, notes) {
+    currentMilestoneId = id;
+    document.getElementById('milestoneId').value = id;
+    document.getElementById('milestoneTitle').textContent = title;
+    document.getElementById('milestoneStatus').value = status;
+    document.getElementById('milestoneTargetDate').value = targetDate;
+    document.getElementById('milestoneNotes').value = notes;
+
+    // Hide any previous errors
+    document.getElementById('updateMilestoneErrors').classList.add('d-none');
+}
+
+document.getElementById('updateMilestoneForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (!currentMilestoneId) return;
+
+    const formData = new FormData(this);
+
+    fetch(`/households/milestone/${currentMilestoneId}/update/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and reload page
+            bootstrap.Modal.getInstance(document.getElementById('updateMilestoneModal')).hide();
+            location.reload();
+        } else {
+            // Show error
+            const errorDiv = document.getElementById('updateMilestoneErrors');
+            errorDiv.innerHTML = `<p>${data.message || 'Error updating milestone'}</p>`;
+            errorDiv.classList.remove('d-none');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating milestone:', error);
+        const errorDiv = document.getElementById('updateMilestoneErrors');
+        errorDiv.innerHTML = '<p>Error updating milestone. Please try again.</p>';
+        errorDiv.classList.remove('d-none');
+    });
+});
+</script>
+{% endblock %}

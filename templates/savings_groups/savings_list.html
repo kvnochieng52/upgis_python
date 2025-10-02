@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Savings Groups - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-piggy-bank"></i> {{ page_title }}</h1>
+    <a href="{% url 'savings_groups:savings_group_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Savings Group
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card stat-card-blue">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ savings_groups.count }}</h3>
+                    <p class="mb-0">Total Groups</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-piggy-bank fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-green">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ savings_groups|length }}</h3>
+                    <p class="mb-0">Active Groups</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-orange">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>KES 0</h3>
+                    <p class="mb-0">Total Savings</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-money-bill-wave fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>0</h3>
+                    <p class="mb-0">Total Members</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Savings Groups Table -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-list"></i> Business Savings Groups (BSG)</h5>
+    </div>
+    <div class="card-body">
+        {% if savings_groups %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Group Name</th>
+                        <th>Formation Date</th>
+                        <th>Members</th>
+                        <th>Total Savings</th>
+                        <th>Meeting Frequency</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in savings_groups %}
+                    <tr>
+                        <td>
+                            <strong>{{ group.group_name }}</strong><br>
+                            <small class="text-muted">{{ group.business_group.name|default:"Independent BSG" }}</small>
+                        </td>
+                        <td>{{ group.formation_date|date:"M d, Y" }}</td>
+                        <td>{{ group.member_count|default:0 }}</td>
+                        <td>
+                            <strong class="text-success">KES {{ group.total_savings|floatformat:0|default:0 }}</strong>
+                        </td>
+                        <td>{{ group.meeting_frequency|default:"Not specified" }}</td>
+                        <td>
+                            <span class="badge bg-{% if group.is_active %}success{% else %}secondary{% endif %}">
+                                {% if group.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'savings_groups:savings_group_detail' group.pk %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'savings_groups:savings_group_edit' group.pk %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-piggy-bank fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No Savings Groups Found</h4>
+            <p class="text-muted">No business savings groups have been formed yet.</p>
+            <a href="{% url 'savings_groups:savings_group_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create First Savings Group
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'savings_groups:savings_group_create' %}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-plus"></i> New BSG
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-success w-100" disabled>
+                    <i class="fas fa-coins"></i> Record Savings
+                </button>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-info w-100" disabled>
+                    <i class="fas fa-chart-bar"></i> Savings Report
+                </button>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-warning w-100" disabled>
+                    <i class="fas fa-download"></i> Export Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-calendar-plus"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'core:bm_cycle_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-list"></i> View All Cycles
+        </a>
+        <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-edit"></i> BM Cycle Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="bm_cycle_name" class="form-label">BM Cycle Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="bm_cycle_name" name="bm_cycle_name"
+                               value="{{ cycle.bm_cycle_name|default:'' }}" required
+                               placeholder="e.g., FY25C1 - West Pokot">
+                        <div class="form-text">Unique name for this BM cycle</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="business_mentor" class="form-label">Business Mentor <span class="text-danger">*</span></label>
+                        <select class="form-select" id="business_mentor" name="business_mentor" required>
+                            <option value="">Choose mentor...</option>
+                            {% for mentor in mentors %}
+                            <option value="{{ mentor.id }}" {% if cycle and cycle.business_mentor_id == mentor.id %}selected{% endif %}>
+                                {{ mentor.first_name }} {{ mentor.last_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="field_associate" class="form-label">Field Associate <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="field_associate" name="field_associate"
+                               value="{{ cycle.field_associate|default:'' }}" required
+                               placeholder="Field Associate Name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="cycle" class="form-label">Cycle Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="cycle" name="cycle"
+                               value="{{ cycle.cycle|default:'' }}" required
+                               placeholder="e.g., FY25C1">
+                        <div class="form-text">Fiscal year and cycle number (e.g., FY25C1 for FY2025 Cycle 1)</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="project" class="form-label">Project <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="project" name="project"
+                               value="{{ cycle.project|default:'' }}" required
+                               placeholder="e.g., Ultra Poor Graduation Program">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="office" class="form-label">Office <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="office" name="office"
+                               value="{{ cycle.office|default:'' }}" required
+                               placeholder="e.g., West Pokot Office">
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Cycle
+                        </button>
+                        <a href="{% url 'core:bm_cycle_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> About BM Cycles</h6>
+            </div>
+            <div class="card-body">
+                <p class="small"><strong>Business Mentor Cycles</strong> track mentoring activities for specific periods.</p>
+                <p class="small"><strong>Cycle Code Format:</strong></p>
+                <ul class="small">
+                    <li><strong>FY25C1:</strong> FY2025 Cycle 1 (Jan-Mar)</li>
+                    <li><strong>FY25C2:</strong> FY2025 Cycle 2 (Apr-Jun)</li>
+                    <li><strong>FY25C3:</strong> FY2025 Cycle 3 (Jul-Sep)</li>
+                    <li><strong>FY25C4:</strong> FY2025 Cycle 4 (Oct-Dec)</li>
+                </ul>
+                <hr>
+                <p class="small">
+                    <strong>Note:</strong> Each BM cycle links a business mentor to specific field activities during a fiscal quarter.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

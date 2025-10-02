@@ -1,0 +1,162 @@
+<div class="row">
+    <div class="col-md-6">
+        <h6 class="text-muted">Training Information</h6>
+        <table class="table table-sm">
+            <tr>
+                <td><strong>Name:</strong></td>
+                <td>{{ training.name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Module ID:</strong></td>
+                <td><span class="badge bg-secondary">{{ training.module_id }}</span></td>
+            </tr>
+            <tr>
+                <td><strong>BM Cycle:</strong></td>
+                <td>
+                    {% if training.bm_cycle %}
+                    {{ training.bm_cycle.bm_cycle_name }}
+                    {% else %}
+                    <span class="text-muted">Not assigned</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Assigned Mentor:</strong></td>
+                <td>
+                    {% if training.assigned_mentor %}
+                    {{ training.assigned_mentor.get_full_name|default:training.assigned_mentor.username }}
+                    {% else %}
+                    <span class="text-muted">No mentor assigned</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Status:</strong></td>
+                <td>
+                    {% if training.status == 'planned' %}
+                    <span class="badge bg-secondary">{{ training.get_status_display }}</span>
+                    {% elif training.status == 'active' %}
+                    <span class="badge bg-success">{{ training.get_status_display }}</span>
+                    {% elif training.status == 'completed' %}
+                    <span class="badge bg-primary">{{ training.get_status_display }}</span>
+                    {% elif training.status == 'cancelled' %}
+                    <span class="badge bg-danger">{{ training.get_status_display }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Duration:</strong></td>
+                <td>
+                    {% if training.time_taken %}
+                    {{ training.time_taken }}
+                    {% else %}
+                    <span class="text-muted">Not set</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h6 class="text-muted">Schedule & Enrollment</h6>
+        <table class="table table-sm">
+            <tr>
+                <td><strong>Start Date:</strong></td>
+                <td>
+                    {% if training.start_date %}
+                    {{ training.start_date }}
+                    {% else %}
+                    <span class="text-muted">Not scheduled</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>End Date:</strong></td>
+                <td>
+                    {% if training.end_date %}
+                    {{ training.end_date }}
+                    {% else %}
+                    <span class="text-muted">Not completed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Max Households:</strong></td>
+                <td>{{ training.max_households }}</td>
+            </tr>
+            <tr>
+                <td><strong>Enrolled:</strong></td>
+                <td>
+                    <span class="badge bg-info">{{ training.enrolled_households_count }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Available Slots:</strong></td>
+                <td>
+                    {% if training.available_slots <= 0 %}
+                    <span class="badge bg-danger">Full</span>
+                    {% else %}
+                    <span class="badge bg-success">{{ training.available_slots }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Created:</strong></td>
+                <td>{{ training.created_at|date:"M d, Y" }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+{% if training.description %}
+<div class="row mt-3">
+    <div class="col-12">
+        <h6 class="text-muted">Description</h6>
+        <p class="border p-3 bg-light">{{ training.description }}</p>
+    </div>
+</div>
+{% endif %}
+
+{% if attendances %}
+<div class="row mt-3">
+    <div class="col-12">
+        <h6 class="text-muted">Recent Attendance (Last 10 Records)</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped">
+                <thead>
+                    <tr>
+                        <th>Household</th>
+                        <th>Training Date</th>
+                        <th>Attendance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in attendances|slice:":10" %}
+                    <tr>
+                        <td>{{ attendance.household.name }}</td>
+                        <td>{{ attendance.training_date }}</td>
+                        <td>
+                            {% if attendance.attendance %}
+                            <span class="badge bg-success">Present</span>
+                            {% else %}
+                            <span class="badge bg-danger">Absent</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if attendances.count > 10 %}
+        <p class="text-muted small">Showing 10 of {{ attendances.count }} attendance records.</p>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No attendance records yet.
+        </div>
+    </div>
+</div>
+{% endif %}

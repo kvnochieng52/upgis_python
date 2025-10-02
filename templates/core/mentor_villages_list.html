@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-map-marked-alt"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'core:assign_mentor_to_village' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Assign Mentor
+        </a>
+        <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-users"></i> Mentors and Their Assigned Villages</h5>
+    </div>
+    <div class="card-body">
+        {% if mentors %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Mentor</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Assigned Villages</th>
+                        <th>Total Households</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for mentor in mentors %}
+                    <tr>
+                        <td>
+                            <strong>{{ mentor.get_full_name }}</strong><br>
+                            <small class="text-muted">{{ mentor.username }}</small>
+                        </td>
+                        <td>{{ mentor.email }}</td>
+                        <td>{{ mentor.phone_number|default:"N/A" }}</td>
+                        <td>
+                            {% if mentor.profile.assigned_villages.all %}
+                            <div class="mb-2">
+                                {% regroup mentor.profile.assigned_villages.all by subcounty_obj.name as village_groups %}
+                                {% for group in village_groups %}
+                                <div class="mb-2">
+                                    <strong class="text-muted">{{ group.grouper|default:"No Subcounty" }}:</strong><br>
+                                    {% for village in group.list %}
+                                    <span class="badge bg-info me-1 mb-1">
+                                        {{ village.name }}
+                                        <a href="{% url 'core:remove_mentor_village' mentor.id village.id %}"
+                                           class="text-white ms-1"
+                                           onclick="return confirm('Remove {{ village.name }} from {{ mentor.get_full_name }}?')">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">No villages assigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if mentor.profile.assigned_villages.all %}
+                            {{ mentor.profile.assigned_villages.all|length }} village(s)
+                            {% else %}
+                            0
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'core:assign_mentor_to_village' %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-plus"></i> Add Villages
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users text-muted" style="font-size: 4rem;"></i>
+            <p class="text-muted mt-3">No mentors found</p>
+            <a href="{% url 'core:assign_mentor_to_village' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Assign First Mentor
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h6><i class="fas fa-info-circle"></i> About Mentor-Village Assignments</h6>
+    </div>
+    <div class="card-body">
+        <p>
+            <strong>Automatic Household Assignment:</strong> When a mentor is assigned to a village,
+            all households in that village automatically belong to that mentor. This means:
+        </p>
+        <ul>
+            <li>Mentors can view and manage all households in their assigned villages</li>
+            <li>Training sessions and visits are automatically linked to the correct mentor</li>
+            <li>Reports and statistics are calculated based on assigned villages</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

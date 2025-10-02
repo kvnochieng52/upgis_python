@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - UPG Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+<div class="container-fluid p-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-users"></i> {{ page_title }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'training:training_list' %}">Training Sessions</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'training:training_details' training.id %}">{{ training.name }}</a></li>
+                <li class="breadcrumb-item active">Attendance</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'training:edit_training' training.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-edit"></i> Edit Training
+        </a>
+        <a href="{% url 'training:training_details' training.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Training
+        </a>
+    </div>
+</div>
+
+<!-- Training Info Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <div class="row">
+            <div class="col-md-8">
+                <h5 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>{{ training.name }}</h5>
+                <small>Module: {{ training.module_id }} • Status: {{ training.get_status_display }}</small>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge bg-light text-dark fs-6">{{ training.start_date|date:"M d, Y"|default:"Date TBD" }}</span>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Location:</strong><br>
+                <span class="text-muted">{{ training.location|default:"Not specified" }}</span>
+            </div>
+            <div class="col-md-3">
+                <strong>Assigned Mentor:</strong><br>
+                <span class="text-muted">{{ training.assigned_mentor.get_full_name|default:"Not assigned" }}</span>
+            </div>
+            <div class="col-md-3">
+                <strong>Max Capacity:</strong><br>
+                <span class="text-muted">{{ training.max_households }} households</span>
+            </div>
+            <div class="col-md-3">
+                <strong>Duration:</strong><br>
+                <span class="text-muted">{{ training.duration_hours|default:"Not set" }} hours</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Date Selector for Daily Attendance -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h6 class="mb-0"><i class="fas fa-calendar-day me-2"></i>Select Training Date</h6>
+            </div>
+            <div class="col-md-6">
+                <form method="get" class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="date-selector" name="date" onchange="this.form.submit()">
+                        {% for date in training_dates %}
+                        <option value="{{ date|date:'Y-m-d' }}" {% if date == selected_date %}selected{% endif %}>
+                            {{ date|date:"l, F d, Y" }}
+                            {% if date == selected_date %} (Today's View){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <a href="?date={{ selected_date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-sync"></i>
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-6 text-primary mb-2">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h4 class="text-primary">{{ total_enrolled }}</h4>
+                <p class="text-muted mb-0">Enrolled ({{ selected_date|date:"M d" }})</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-6 text-success mb-2">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h4 class="text-success">{{ present_count }}</h4>
+                <p class="text-muted mb-0">Present</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-6 text-warning mb-2">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <h4 class="text-warning">{{ absent_count }}</h4>
+                <p class="text-muted mb-0">Absent</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info shadow-sm">
+            <div class="card-body text-center">
+                <div class="display-6 text-info mb-2">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <h4 class="text-info">{{ attendance_rate }}%</h4>
+                <p class="text-muted mb-0">Attendance Rate</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        {% if attendances.count == 0 %}
+        <!-- No Households Enrolled -->
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-users text-muted" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="text-muted mb-3">No households enrolled</h4>
+                <p class="text-muted mb-4">This training session has no households enrolled yet. Click the button below to add the first household.</p>
+                <button type="button" class="btn btn-primary btn-lg" id="add-first-household-btn"
+                        onclick="console.log('Inline click triggered'); $('#household-selection-form').slideDown(); loadAvailableHouseholds();">
+                    <i class="fas fa-plus me-2"></i>Add First Household
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <!-- Attendance Management -->
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Attendance Management</h5>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-sm" id="mark-all-present">
+                        <i class="fas fa-check-double"></i> Mark All Present
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm" id="mark-all-absent">
+                        <i class="fas fa-times"></i> Mark All Absent
+                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" id="add-household-btn"
+                            onclick="console.log('Regular add button inline click'); $('#household-selection-form').slideDown(); loadAvailableHouseholds();">
+                        <i class="fas fa-plus"></i> Add Household
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 30%;">Household</th>
+                                <th style="width: 20%;">Village</th>
+                                <th style="width: 15%;">Training Date</th>
+                                <th style="width: 20%;">Attendance</th>
+                                <th style="width: 15%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-tbody">
+                            {% for attendance in attendances %}
+                            <tr data-attendance-id="{{ attendance.id }}" class="{% if attendance.attendance %}table-light{% endif %}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            {% if attendance.attendance %}
+                                            <i class="fas fa-check-circle text-success fs-5"></i>
+                                            {% else %}
+                                            <i class="fas fa-times-circle text-warning fs-5"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <strong>{{ attendance.household.name }}</strong><br>
+                                            <small class="text-muted">
+                                                <i class="fas fa-phone me-1"></i>{{ attendance.household.phone_number }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        {{ attendance.household.village.name }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ attendance.training_date|date:"M d, Y" }}</small>
+                                </td>
+                                <td>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input attendance-toggle" type="checkbox"
+                                               data-attendance-id="{{ attendance.id }}"
+                                               {% if attendance.attendance %}checked{% endif %}
+                                               style="transform: scale(1.2);">
+                                        <label class="form-check-label fw-medium attendance-label">
+                                            {% if attendance.attendance %}
+                                            <span class="text-success">Present</span>
+                                            {% else %}
+                                            <span class="text-warning">Absent</span>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                    {% if attendance.marked_by %}
+                                    <small class="text-muted d-block mt-1">
+                                        Marked by: {{ attendance.marked_by.get_full_name }}<br>
+                                        {% if attendance.attendance_marked_at %}
+                                        {{ attendance.attendance_marked_at|date:"M d, Y H:i" }}
+                                        {% endif %}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                                                data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item text-danger remove-attendance" href="#"
+                                                   data-attendance-id="{{ attendance.id }}">
+                                                    <i class="fas fa-trash me-2"></i>Remove from Training
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Household Selection Form (Hidden by default) -->
+        <div class="card mt-3" id="household-selection-form" style="display: none;">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Add Household to Training</h6>
+            </div>
+            <div class="card-body">
+                <form id="add-household-form">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-8">
+                            <label for="household-select" class="form-label">Select Household</label>
+                            <select class="form-select" id="household-select" name="household_id" required>
+                                <option value="">Choose a household...</option>
+                                <!-- Options will be loaded via AJAX -->
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="attendance-date" class="form-label">Training Date</label>
+                            <input type="date" class="form-control" id="attendance-date" name="training_date"
+                                   value="{{ selected_date|date:'Y-m-d' }}" required>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary" id="submit-add-household">
+                            <i class="fas fa-plus"></i> Add to Training
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="cancel-add-household">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-success" id="save-attendance">
+                        <i class="fas fa-save"></i> Save All Changes
+                    </button>
+                    <a href="{% url 'training:edit_training' training.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit Training Details
+                    </a>
+                    {% if training.status == 'planned' %}
+                    <a href="{% url 'training:start_training' training.id %}" class="btn btn-outline-warning">
+                        <i class="fas fa-play"></i> Start Training
+                    </a>
+                    {% endif %}
+                    {% if training.status == 'active' %}
+                    <a href="{% url 'training:complete_training' training.id %}" class="btn btn-outline-info">
+                        <i class="fas fa-check"></i> Complete Training
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Mentor Instructions -->
+        {% if user.role == 'mentor' and training.assigned_mentor == user %}
+        <div class="card shadow-sm mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-user-check me-2"></i>Mentor Instructions</h6>
+            </div>
+            <div class="card-body">
+                <p class="small mb-0">As the assigned mentor for this training, you can mark attendance and manage household enrollment. Use the toggles to mark each household as present or absent.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Training Progress -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-line"></i> Training Progress</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Enrollment Progress</small>
+                        <small class="text-muted">{{ total_enrolled }}/{{ training.max_households }}</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" role="progressbar"
+                             style="width: {% widthratio total_enrolled training.max_households 100 %}%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Attendance Rate</small>
+                        <small class="text-muted">{{ attendance_rate }}%</small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                             style="width: {{ attendance_rate }}%"></div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="text-primary fw-bold">{{ total_enrolled }}</div>
+                        <small class="text-muted">Enrolled</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-success fw-bold">{{ present_count }}</div>
+                        <small class="text-muted">Present</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-warning fw-bold">{{ absent_count }}</div>
+                        <small class="text-muted">Absent</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6><i class="fas fa-history"></i> Recent Activity</h6>
+            </div>
+            <div class="card-body">
+                {% if attendances %}
+                <div class="timeline">
+                    {% for attendance in attendances|slice:":5" %}
+                    {% if attendance.attendance_marked_at %}
+                    <div class="d-flex mb-2">
+                        <div class="me-2">
+                            {% if attendance.attendance %}
+                            <i class="fas fa-check-circle text-success"></i>
+                            {% else %}
+                            <i class="fas fa-times-circle text-warning"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <small>
+                                <strong>{{ attendance.household.name }}</strong> marked
+                                {% if attendance.attendance %}present{% else %}absent{% endif %}
+                                <br>
+                                <span class="text-muted">{{ attendance.attendance_marked_at|timesince }} ago</span>
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables and functions
+const trainingId = {{ training.id }};
+
+// CSRF token setup for AJAX
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+$.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+        if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+        }
+    }
+});
+
+// Make loadAvailableHouseholds globally available
+function loadAvailableHouseholds() {
+    console.log('Loading available households for training ID:', trainingId);
+
+    // Check if the form exists
+    const $form = $('#household-selection-form');
+    const $select = $('#household-select');
+
+    console.log('Household selection form found:', $form.length > 0);
+    console.log('Household select found:', $select.length > 0);
+
+    if ($form.length === 0) {
+        console.error('Household selection form not found!');
+        return;
+    }
+
+    $.ajax({
+        url: '/training/' + trainingId + '/available-households/',
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            console.log('Received household data:', data);
+            const select = $('#household-select');
+            select.empty();
+            select.append('<option value="">Choose a household...</option>');
+
+            if (data.success && data.households) {
+                if (data.households.length === 0) {
+                    select.append('<option value="">No households available</option>');
+                    console.log('No households available');
+                } else {
+                    data.households.forEach(function(household) {
+                        select.append(`<option value="${household.id}">${household.name} - ${household.village}</option>`);
+                    });
+                    console.log('Added', data.households.length, 'households to dropdown');
+                }
+            } else {
+                console.error('Failed to load households:', data);
+                select.append('<option value="">Error loading households</option>');
+                alert('Failed to load households: ' + (data.message || 'Unknown error'));
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('AJAX error loading households:', status, error);
+            console.error('Response:', xhr.responseText);
+            console.error('Status code:', xhr.status);
+            const select = $('#household-select');
+            select.empty();
+            select.append('<option value="">Error loading households</option>');
+            alert('Error loading households: ' + error + '\nStatus: ' + xhr.status);
+        }
+    });
+}
+
+$(document).ready(function() {
+    console.log('Document ready, training ID:', trainingId);
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('Add first household button found:', $('#add-first-household-btn').length);
+    console.log('Add household button found:', $('#add-household-btn').length);
+
+    // Use event delegation to ensure buttons work even if dynamically added
+    $(document).on('click', '#add-first-household-btn, #add-household-btn', function() {
+        console.log('Add household button clicked');
+        $('#household-selection-form').slideDown();
+        loadAvailableHouseholds();
+    });
+
+    // Also bind directly for immediate availability
+    $('#add-first-household-btn, #add-household-btn').on('click', function() {
+        console.log('Direct click handler: Add household button clicked');
+        $('#household-selection-form').slideDown();
+        loadAvailableHouseholds();
+    });
+
+    // Add a test function to verify button is accessible
+    setTimeout(function() {
+        const $firstBtn = $('#add-first-household-btn');
+        const $regularBtn = $('#add-household-btn');
+
+        console.log('Button accessibility test:');
+        console.log('First household button:', $firstBtn.length > 0 ? 'Found' : 'Not found');
+        console.log('Regular add button:', $regularBtn.length > 0 ? 'Found' : 'Not found');
+
+        if ($firstBtn.length > 0) {
+            console.log('First household button visible:', $firstBtn.is(':visible'));
+            console.log('First household button enabled:', !$firstBtn.is(':disabled'));
+        }
+
+        if ($regularBtn.length > 0) {
+            console.log('Regular add button visible:', $regularBtn.is(':visible'));
+            console.log('Regular add button enabled:', !$regularBtn.is(':disabled'));
+        }
+    }, 1000);
+
+    // Hide add household form
+    $('#cancel-add-household').click(function() {
+        $('#household-selection-form').slideUp();
+        $('#add-household-form')[0].reset();
+    });
+
+
+    // Add household to training
+    $('#add-household-form').submit(function(e) {
+        e.preventDefault();
+        console.log('Form submitted');
+
+        const formData = $(this).serialize();
+        console.log('Form data:', formData);
+
+        const submitBtn = $('#submit-add-household');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Adding...');
+
+        $.ajax({
+            url: '/training/' + trainingId + '/add-household/',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(data) {
+                console.log('Response received:', data);
+                if (data.success) {
+                    alert('Household added successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error adding household:', status, error);
+                console.error('Response:', xhr.responseText);
+                console.error('Status code:', xhr.status);
+                alert('Error adding household: ' + error + '\nStatus: ' + xhr.status);
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false).html('<i class="fas fa-plus"></i> Add to Training');
+            }
+        });
+    });
+
+    // Toggle attendance
+    $('.attendance-toggle').change(function() {
+        const attendanceId = $(this).data('attendance-id');
+        const isPresent = $(this).is(':checked');
+        const row = $(this).closest('tr');
+        const label = $(this).siblings('.attendance-label');
+        const icon = row.find('td:first i');
+
+        $.post('/training/attendance/' + attendanceId + '/toggle/', {
+            attendance: isPresent
+        }, function(data) {
+            if (data.success) {
+                // Update label and styling
+                if (isPresent) {
+                    label.html('<span class="text-success">Present</span>');
+                    row.addClass('table-light');
+                    icon.removeClass('fa-times-circle text-warning').addClass('fa-check-circle text-success');
+                } else {
+                    label.html('<span class="text-warning">Absent</span>');
+                    row.removeClass('table-light');
+                    icon.removeClass('fa-check-circle text-success').addClass('fa-times-circle text-warning');
+                }
+
+                // Update statistics (reload for simplicity)
+                setTimeout(function() {
+                    location.reload();
+                }, 1000);
+            }
+        });
+    });
+
+    // Mark all present
+    $('#mark-all-present').click(function() {
+        $('.attendance-toggle:not(:checked)').trigger('click');
+    });
+
+    // Mark all absent
+    $('#mark-all-absent').click(function() {
+        $('.attendance-toggle:checked').trigger('click');
+    });
+
+    // Remove attendance
+    $('.remove-attendance').click(function(e) {
+        e.preventDefault();
+        if (confirm('Are you sure you want to remove this household from the training?')) {
+            const attendanceId = $(this).data('attendance-id');
+
+            $.ajax({
+                url: '/training/attendance/' + attendanceId + '/remove/',
+                type: 'DELETE',
+                success: function(data) {
+                    if (data.success) {
+                        location.reload();
+                    }
+                }
+            });
+        }
+    });
+
+    // Save attendance (placeholder)
+    $('#save-attendance').click(function() {
+        $(this).html('<i class="fas fa-check"></i> Saved!').removeClass('btn-outline-success').addClass('btn-success');
+        setTimeout(function() {
+            $('#save-attendance').html('<i class="fas fa-save"></i> Save All Changes').removeClass('btn-success').addClass('btn-outline-success');
+        }, 2000);
+    });
+});
+</script>
+</div>
+</body>
+</html>

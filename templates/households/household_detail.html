@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-home"></i> {{ household.name }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'households:household_list' %}">Households</a></li>
+                <li class="breadcrumb-item active">{{ household.name }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'upg_grants:application_create' household.pk %}" class="btn btn-success">
+            <i class="fas fa-file-invoice-dollar"></i> Apply for Grant
+        </a>
+        <a href="{% url 'households:household_edit' household.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{% url 'households:household_delete' household.pk %}" class="btn btn-outline-danger">
+            <i class="fas fa-trash"></i> Delete
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Household Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Household Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Household Name:</strong> {{ household.name }}</p>
+                        <p><strong>Phone Number:</strong> {{ household.phone_number|default:"Not provided" }}</p>
+                        <p><strong>Village:</strong> {{ household.village.name|default:"Not specified" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>National ID:</strong> {{ household.national_id|default:"Not provided" }}</p>
+                        <p><strong>Disability:</strong> {{ household.disability|yesno:"Yes,No" }}</p>
+                        <p><strong>Members:</strong> {{ household.members.count }} people</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Registration Date:</strong> {{ household.created_at|date:"M d, Y" }}</p>
+                        <p><strong>Last Updated:</strong> {{ household.updated_at|date:"M d, Y" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>PPI Score:</strong>
+                            {% if household.ppi_scores.exists %}
+                                {% with household.ppi_scores.last as latest_ppi %}
+                                <span class="badge bg-{% if latest_ppi.eligibility_score < 30 %}danger{% elif latest_ppi.eligibility_score < 60 %}warning{% else %}success{% endif %} fs-6">
+                                    {{ latest_ppi.eligibility_score }}% ({{ latest_ppi.assessment_date }})
+                                </span>
+                                {% endwith %}
+                            {% else %}
+                                <span class="badge bg-secondary">Not assessed</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>GPS Location:</strong>
+                            {% if household.gps_latitude and household.gps_longitude %}
+                                {{ household.gps_latitude }}, {{ household.gps_longitude }}
+                            {% else %}
+                                Not recorded
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Household Members -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-users"></i> Household Members ({{ household.members.count }})</h5>
+                <a href="{% url 'households:member_create' household.pk %}" class="btn btn-success btn-sm">
+                    <i class="fas fa-user-plus"></i> Add Member
+                </a>
+            </div>
+            <div class="card-body">
+                {% if household.members.exists %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Relationship</th>
+                                <th>Education</th>
+                                <th>Program Participant</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in household.members.all %}
+                            <tr>
+                                <td><strong>{{ member.name }}</strong></td>
+                                <td>{{ member.age }}</td>
+                                <td>{{ member.get_gender_display }}</td>
+                                <td>{{ member.get_relationship_to_head_display }}</td>
+                                <td>{{ member.get_education_level_display }}</td>
+                                <td>
+                                    <span class="badge bg-{% if member.is_program_participant %}success{% else %}secondary{% endif %}">
+                                        {% if member.is_program_participant %}Yes{% else %}No{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'households:member_edit' member.pk %}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'households:member_delete' member.pk %}" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">No household members added yet.</p>
+                    <a href="{% url 'households:member_create' household.pk %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-user-plus"></i> Add First Member
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Program Participation -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-project-diagram"></i> Program Participation</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Program participation history will be displayed here...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'households:household_edit' household.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit Household
+                    </a>
+                    <a href="{% url 'households:member_create' household.pk %}" class="btn btn-outline-success">
+                        <i class="fas fa-user-plus"></i> Add Member
+                    </a>
+                    <a href="#" class="btn btn-outline-info">
+                        <i class="fas fa-chart-pie"></i> Conduct PPI Assessment
+                    </a>
+                    <a href="{% url 'surveys:survey_list' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-clipboard-list"></i> Take Survey
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Household Statistics -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Members:</span>
+                    <strong>{{ household.members.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Surveys Completed:</span>
+                    <strong>{{ household.surveys.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Programs Enrolled:</span>
+                    <strong>{{ household.program_participations.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Program Participants:</span>
+                    <strong>{{ program_participants_count|default:0 }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

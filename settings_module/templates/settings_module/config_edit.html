@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-edit"></i> {{ page_title }}
+                    </h3>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Configuration Key</label>
+                                <input type="text" class="form-control" value="{{ config.key }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Type</label>
+                                <input type="text" class="form-control" value="{{ config.get_setting_type_display }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Category</label>
+                            <input type="text" class="form-control" value="{{ config.category|title }}" readonly>
+                        </div>
+
+                        {% if config.description %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description</label>
+                            <p class="form-control-plaintext">{{ config.description }}</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="value" class="form-label fw-bold">Value</label>
+                            {% if config.setting_type == 'boolean' %}
+                                <select name="value" id="value" class="form-select" required>
+                                    <option value="true" {% if config.value == 'true' %}selected{% endif %}>Enabled (True)</option>
+                                    <option value="false" {% if config.value == 'false' %}selected{% endif %}>Disabled (False)</option>
+                                </select>
+                            {% elif config.setting_type == 'json' %}
+                                <textarea name="value" id="value" class="form-control" rows="6" required>{{ config.value }}</textarea>
+                                <div class="form-text">Enter valid JSON format</div>
+                            {% elif config.setting_type == 'integer' %}
+                                <input type="number" name="value" id="value" class="form-control" value="{{ config.value }}" required>
+                            {% else %}
+                                <input type="text" name="value" id="value" class="form-control" value="{{ config.value }}" required>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Current Typed Value</label>
+                            <div class="border p-3 bg-light">
+                                {% if config.setting_type == 'boolean' %}
+                                    {% if config.get_typed_value %}
+                                    <span class="badge bg-success">Enabled</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Disabled</span>
+                                    {% endif %}
+                                {% elif config.setting_type == 'json' %}
+                                <pre class="mb-0"><code>{{ config.get_typed_value|pprint }}</code></pre>
+                                {% else %}
+                                <code>{{ config.get_typed_value }}</code>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Access Level</label>
+                                <span class="badge bg-{% if config.is_public %}success{% else %}warning{% endif %}">
+                                    {% if config.is_public %}Public{% else %}Admin Only{% endif %}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Status</label>
+                                <span class="badge bg-{% if config.is_editable %}success{% else %}secondary{% endif %}">
+                                    {% if config.is_editable %}Editable{% else %}Read Only{% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if config.modified_by %}
+                        <div class="mt-3 pt-3 border-top">
+                            <small class="text-muted">
+                                Last modified by <strong>{{ config.modified_by.get_full_name|default:config.modified_by.username }}</strong>
+                                on {{ config.updated_at|date:"M d, Y H:i" }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <a href="{% url 'settings:system_config' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // JSON validation for JSON type configurations
+    const valueField = document.getElementById('value');
+    if (valueField && valueField.tagName === 'TEXTAREA') {
+        valueField.addEventListener('blur', function() {
+            try {
+                JSON.parse(this.value);
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } catch (e) {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

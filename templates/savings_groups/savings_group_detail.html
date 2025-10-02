@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-piggy-bank"></i> {{ savings_group.name }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'savings_groups:savings_list' %}">Savings Groups</a></li>
+                <li class="breadcrumb-item active">{{ savings_group.name }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'savings_groups:savings_group_edit' savings_group.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Group Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Savings Group Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Group Name:</strong> {{ savings_group.name }}</p>
+                        <p><strong>Formation Date:</strong> {{ savings_group.formation_date|date:"M d, Y"|default:"Not set" }}</p>
+                        <p><strong>Meeting Day:</strong> {{ savings_group.meeting_day|default:"Not set" }}</p>
+                        <p><strong>Meeting Location:</strong> {{ savings_group.meeting_location|default:"Not set" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Target Members:</strong> {{ savings_group.target_members }}</p>
+                        <p><strong>Total Members:</strong> {{ savings_group.total_members }}</p>
+                        <p><strong>Total Savings:</strong> KES {{ savings_group.savings_to_date|floatformat:2 }}</p>
+                        <p><strong>Status:</strong>
+                            <span class="badge bg-{% if savings_group.is_active %}success{% else %}secondary{% endif %}">
+                                {% if savings_group.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                {% if savings_group.facilitator %}
+                <hr>
+                <p><strong>Facilitator:</strong> {{ savings_group.facilitator.get_full_name|default:savings_group.facilitator.username }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Business Groups -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-briefcase"></i> Business Groups</h5>
+                <a href="{% url 'savings_groups:add_business_group' savings_group.pk %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Add Business Group
+                </a>
+            </div>
+            <div class="card-body">
+                {% if savings_group.business_groups.all %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Group Name</th>
+                                    <th>Business Type</th>
+                                    <th>Members</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bg in savings_group.business_groups.all %}
+                                <tr>
+                                    <td><a href="{% url 'business_groups:group_detail' bg.pk %}">{{ bg.name }}</a></td>
+                                    <td>{{ bg.business_type|default:"-" }}</td>
+                                    <td>{{ bg.member_count|default:0 }}</td>
+                                    <td>
+                                        <a href="{% url 'savings_groups:remove_business_group' savings_group.pk bg.pk %}"
+                                           class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No business groups associated yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Individual Members -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-users"></i> Individual Members</h5>
+                <a href="{% url 'savings_groups:add_member' savings_group.pk %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-user-plus"></i> Add Member
+                </a>
+            </div>
+            <div class="card-body">
+                {% if savings_group.bsg_members.all %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Household</th>
+                                    <th>Role</th>
+                                    <th>Joined Date</th>
+                                    <th>Total Savings</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in savings_group.bsg_members.all %}
+                                <tr>
+                                    <td>{{ member.household.name }}</td>
+                                    <td><span class="badge bg-info">{{ member.get_role_display }}</span></td>
+                                    <td>{{ member.joined_date|date:"M d, Y" }}</td>
+                                    <td>KES {{ member.total_savings|floatformat:2 }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if member.is_active %}success{% else %}secondary{% endif %}">
+                                            {% if member.is_active %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if member.is_active %}
+                                        <a href="{% url 'savings_groups:remove_member' savings_group.pk member.pk %}"
+                                           class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-user-minus"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No individual members yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'savings_groups:savings_group_edit' savings_group.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit Group
+                    </a>
+                    <a href="{% url 'savings_groups:add_member' savings_group.pk %}" class="btn btn-outline-success">
+                        <i class="fas fa-user-plus"></i> Add Individual Member
+                    </a>
+                    <a href="{% url 'savings_groups:add_business_group' savings_group.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-briefcase"></i> Add Business Group
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Group Statistics -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Members:</span>
+                    <strong>{{ current_members }} / {{ savings_group.target_members }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Meetings:</span>
+                    <strong>0</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Active Loans:</span>
+                    <strong>0</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Completion Rate:</span>
+                    <strong>{{ membership_percentage }}%</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

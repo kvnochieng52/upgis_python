@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cogs"></i> {{ page_title }}</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'reports:report_list' %}">Reports</a></li>
+            <li class="breadcrumb-item active">Custom Report Builder</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-filter"></i> Report Configuration</h5>
+            </div>
+            <div class="card-body">
+                <form id="customReportForm" method="get" action="{% url 'reports:download_custom_report' %}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="report_type" class="form-label">Report Type *</label>
+                            <select class="form-select" id="report_type" name="report_type" required>
+                                <option value="">Select Report Type</option>
+                                {% for value, label in report_types %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="village" class="form-label">Village Filter</label>
+                            <select class="form-select" id="village" name="village">
+                                <option value="">All Villages</option>
+                                {% for village in villages %}
+                                <option value="{{ village.id }}">{{ village.name }} - {{ village.subcounty }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="program" class="form-label">Program Filter</label>
+                            <select class="form-select" id="program" name="program">
+                                <option value="">All Programs</option>
+                                {% for program in programs %}
+                                <option value="{{ program.id }}">{{ program.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="output_format" class="form-label">Output Format</label>
+                            <select class="form-select" id="output_format" name="output_format">
+                                <option value="csv">CSV (Excel Compatible)</option>
+                                <option value="pdf" disabled>PDF (Coming Soon)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date_from" class="form-label">Date From</label>
+                            <input type="date" class="form-control" id="date_from" name="date_from">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="date_to" class="form-label">Date To</label>
+                            <input type="date" class="form-control" id="date_to" name="date_to">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <button type="button" class="btn btn-secondary me-md-2" onclick="resetForm()">
+                                    <i class="fas fa-undo"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-download"></i> Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Report Preview/Help -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Report Information</h6>
+            </div>
+            <div class="card-body">
+                <div id="reportInfo">
+                    <p class="text-muted">Select a report type to see details about what data will be included.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'reports:download_household_report' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-home"></i> All Households
+                    </a>
+                    <a href="{% url 'reports:download_business_groups_report' %}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-users"></i> All Business Groups
+                    </a>
+                    <a href="{% url 'reports:download_geographic_report' %}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-map-marker-alt"></i> Geographic Analysis
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('report_type').addEventListener('change', function() {
+    const reportType = this.value;
+    const infoDiv = document.getElementById('reportInfo');
+
+    const reportDescriptions = {
+        'households': {
+            title: 'Household Report',
+            description: 'Comprehensive list of registered households with demographics, contact information, and member counts.',
+            fields: ['Household Name', 'Village', 'Phone Number', 'Total Members', 'Registration Date']
+        },
+        'business_groups': {
+            title: 'Business Groups Report',
+            description: 'Information about business group formation, membership, and business activities.',
+            fields: ['Group Name', 'Village', 'Business Type', 'Formation Date', 'Member Count']
+        },
+        'savings_groups': {
+            title: 'Savings Groups Report',
+            description: 'Details about savings group activities, meeting schedules, and financial progress.',
+            fields: ['Group Name', 'Formation Date', 'Members', 'Meeting Schedule']
+        },
+        'training': {
+            title: 'Training Report',
+            description: 'Training session attendance, completion rates, and participant progress tracking.',
+            fields: ['Training Title', 'Module', 'Enrolled', 'Completed', 'Completion Rate']
+        },
+        'ppi': {
+            title: 'PPI Assessment Report',
+            description: 'Poverty Probability Index scores and poverty classifications for households.',
+            fields: ['Household', 'PPI Score', 'Poverty Probability', 'Assessment Date']
+        },
+        'geographic': {
+            title: 'Geographic Analysis',
+            description: 'Program distribution and activity levels across villages and subcounties.',
+            fields: ['Village', 'Subcounty', 'Households', 'Active Programs', 'Groups']
+        }
+    };
+
+    if (reportType && reportDescriptions[reportType]) {
+        const info = reportDescriptions[reportType];
+        infoDiv.innerHTML = `
+            <h6>${info.title}</h6>
+            <p class="small">${info.description}</p>
+            <hr>
+            <h6>Included Fields:</h6>
+            <ul class="small">
+                ${info.fields.map(field => `<li>${field}</li>`).join('')}
+            </ul>
+        `;
+    } else {
+        infoDiv.innerHTML = '<p class="text-muted">Select a report type to see details about what data will be included.</p>';
+    }
+});
+
+function resetForm() {
+    document.getElementById('customReportForm').reset();
+    document.getElementById('reportInfo').innerHTML = '<p class="text-muted">Select a report type to see details about what data will be included.</p>';
+}
+</script>
+{% endblock %}

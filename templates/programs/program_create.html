@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-plus"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'programs:program_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Programs
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Create New Program</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Program Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="Enter program name" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="program_type" class="form-label">Program Type</label>
+                            <select class="form-select" id="program_type" name="program_type">
+                                {% for value, label in program_types %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="4" placeholder="Describe the program objectives and activities" required></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="budget" class="form-label">Budget (KES)</label>
+                            <input type="number" class="form-control" id="budget" name="budget" placeholder="0" min="0">
+                            <div class="form-text">Leave blank if budget is not yet determined</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="target_beneficiaries" class="form-label">Target Beneficiaries</label>
+                            <input type="number" class="form-control" id="target_beneficiaries" name="target_beneficiaries" placeholder="0" min="0">
+                            <div class="form-text">Number of households expected to participate</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="duration_months" class="form-label">Duration (Months)</label>
+                            <input type="number" class="form-control" id="duration_months" name="duration_months" value="12" min="1" max="24">
+                            <div class="form-text">Standard UPG program is 12 months</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="county" class="form-label">County</label>
+                            <input type="text" class="form-control" id="county" name="county" placeholder="e.g., West Pokot">
+                            <div class="form-text">Leave blank for multi-county programs</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="eligibility_criteria" class="form-label">Eligibility Criteria</label>
+                        <textarea class="form-control" id="eligibility_criteria" name="eligibility_criteria" rows="3" placeholder="Define who can participate in this program"></textarea>
+                        <div class="form-text">Example: Ultra-poor households with PPI score below 50</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="application_requirements" class="form-label">Application Requirements</label>
+                        <textarea class="form-control" id="application_requirements" name="application_requirements" rows="3" placeholder="List documents and requirements for application"></textarea>
+                        <div class="form-text">Example: National ID, household roster, motivation letter</div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'programs:program_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Program
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-lightbulb"></i> Program Creation Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <h6>UPG Program Standards:</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check-circle text-success"></i> 12-month duration</li>
+                    <li><i class="fas fa-check-circle text-success"></i> Ultra-poor targeting</li>
+                    <li><i class="fas fa-check-circle text-success"></i> Business group formation</li>
+                    <li><i class="fas fa-check-circle text-success"></i> Savings group integration</li>
+                    <li><i class="fas fa-check-circle text-success"></i> Grant disbursement</li>
+                    <li><i class="fas fa-check-circle text-success"></i> Mentoring support</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-users"></i> Targeting Approach</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>ESR List:</strong> Extremely poor households list from county records</p>
+                <p><strong>PPI Scoring:</strong> Poverty Probability Index assessment</p>
+                <p><strong>Community Validation:</strong> Village-level verification of poverty status</p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-route"></i> Implementation Process</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-2">
+                    <div class="bg-primary text-white rounded px-3 py-2 small text-center">
+                        1. Targeting & Eligibility
+                    </div>
+                    <div class="bg-success text-white rounded px-3 py-2 small text-center">
+                        2. Training & Capacity Building
+                    </div>
+                    <div class="bg-info text-white rounded px-3 py-2 small text-center">
+                        3. Group Formation
+                    </div>
+                    <div class="bg-warning text-dark rounded px-3 py-2 small text-center">
+                        4. Grant Disbursement
+                    </div>
+                    <div class="bg-secondary text-white rounded px-3 py-2 small text-center">
+                        5. Mentoring & Support
+                    </div>
+                    <div class="bg-danger text-white rounded px-3 py-2 small text-center">
+                        6. Graduation
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

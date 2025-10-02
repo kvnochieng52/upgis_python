@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-file-alt"></i> {{ page_title }}</h1>
+    <a href="{% url 'households:household_detail' household.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Household
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-file-invoice-dollar"></i> Grant Application Form</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Application Title <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="grant_type" class="form-label">Grant Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="grant_type" name="grant_type" required>
+                                <option value="">Select Grant Type</option>
+                                <option value="seed_business">Seed Business Grant</option>
+                                <option value="performance_recognition">Performance Recognition Grant</option>
+                                <option value="livelihood">Livelihood Grant</option>
+                                <option value="emergency">Emergency Grant</option>
+                                <option value="education">Education Support Grant</option>
+                                <option value="housing">Housing Improvement Grant</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="requested_amount" class="form-label">Requested Amount (KES) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" class="form-control" id="requested_amount" name="requested_amount" required readonly>
+                            <small class="form-text text-muted">Amount will be calculated from budget breakdown</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="program" class="form-label">Program <small class="text-muted">(Optional - for program-specific funding)</small></label>
+                        <select class="form-select" id="program" name="program">
+                            <option value="">-- Not program-specific --</option>
+                            {% for prog in programs %}
+                            <option value="{{ prog.id }}">{{ prog.name }} - {{ prog.cycle }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="purpose" class="form-label">Purpose and Justification <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="purpose" name="purpose" rows="4" required
+                                  placeholder="Provide detailed purpose and justification for this grant application"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="business_plan" class="form-label">Business Plan (if applicable)</label>
+                        <textarea class="form-control" id="business_plan" name="business_plan" rows="4"
+                                  placeholder="Describe your business plan if this is a business-related grant"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="expected_outcomes" class="form-label">Expected Outcomes <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="expected_outcomes" name="expected_outcomes" rows="3" required
+                                  placeholder="What outcomes do you expect from this grant?"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Budget Breakdown <span class="text-danger">*</span></label>
+                        <small class="form-text text-muted d-block mb-2">Add at least one budget item. Total must match requested amount.</small>
+                        <div id="budget-items">
+                            <div class="row mb-2 budget-row">
+                                <div class="col-md-7">
+                                    <input type="text" class="form-control budget-item-name" name="budget_item[]" placeholder="Budget item" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="number" step="0.01" class="form-control budget-item-amount" name="budget_amount[]" placeholder="Amount" required>
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-sm btn-success add-budget-item">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <strong>Total Budget: KES <span id="budget-total">0.00</span></strong>
+                            <span id="budget-validation" class="text-danger ms-3"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'households:household_detail' household.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Submit Application
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Household Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong> {{ household.name }}</p>
+                <p><strong>Village:</strong> {{ household.village.name }}</p>
+                <p><strong>Sub-County:</strong> {{ household.subcounty.name|default:"Not set" }}</p>
+                <p><strong>Phone:</strong> {{ household.phone_number }}</p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-lightbulb"></i> Application Tips</h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>Be clear and specific about your grant purpose</li>
+                    <li>Provide realistic budget estimates</li>
+                    <li>Explain expected outcomes clearly</li>
+                    <li>For business grants, include a detailed plan</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add budget items dynamically and calculate totals
+document.addEventListener('DOMContentLoaded', function() {
+    const budgetItemsContainer = document.querySelector('#budget-items');
+    const budgetTotalSpan = document.querySelector('#budget-total');
+    const requestedAmountInput = document.querySelector('#requested_amount');
+    const budgetValidation = document.querySelector('#budget-validation');
+
+    // Function to calculate budget total
+    function calculateBudgetTotal() {
+        let total = 0;
+        document.querySelectorAll('.budget-item-amount').forEach(input => {
+            const value = parseFloat(input.value) || 0;
+            total += value;
+        });
+        budgetTotalSpan.textContent = total.toFixed(2);
+        requestedAmountInput.value = total.toFixed(2);
+        return total;
+    }
+
+    // Add budget item
+    budgetItemsContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.add-budget-item')) {
+            e.preventDefault();
+            const firstRow = budgetItemsContainer.querySelector('.budget-row');
+            const newRow = firstRow.cloneNode(true);
+
+            // Clear input values
+            newRow.querySelectorAll('input').forEach(input => input.value = '');
+
+            // Change button to remove button
+            const button = newRow.querySelector('button');
+            button.classList.remove('btn-success', 'add-budget-item');
+            button.classList.add('btn-danger', 'remove-budget-item');
+            button.querySelector('i').classList.remove('fa-plus');
+            button.querySelector('i').classList.add('fa-minus');
+
+            budgetItemsContainer.appendChild(newRow);
+
+            // Add event listener to new amount input
+            newRow.querySelector('.budget-item-amount').addEventListener('input', calculateBudgetTotal);
+        }
+
+        if (e.target.closest('.remove-budget-item')) {
+            e.preventDefault();
+            e.target.closest('.budget-row').remove();
+            calculateBudgetTotal();
+        }
+    });
+
+    // Calculate total when any amount changes
+    budgetItemsContainer.addEventListener('input', function(e) {
+        if (e.target.classList.contains('budget-item-amount')) {
+            calculateBudgetTotal();
+        }
+    });
+
+    // Form validation before submit
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const total = calculateBudgetTotal();
+
+        // Check if at least one budget item is filled
+        const hasValidBudgetItem = Array.from(document.querySelectorAll('.budget-item-name')).some(input => input.value.trim() !== '');
+
+        if (!hasValidBudgetItem || total === 0) {
+            e.preventDefault();
+            budgetValidation.textContent = 'Please add at least one budget item with an amount.';
+            alert('Budget breakdown is required. Please add at least one budget item.');
+            return false;
+        }
+
+        budgetValidation.textContent = '';
+        return true;
+    });
+});
+</script>
+{% endblock %}

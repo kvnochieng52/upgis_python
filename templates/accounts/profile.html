@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user"></i> User Profile</h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-circle"></i> Profile Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name"
+                                   value="{{ user.first_name }}" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name"
+                                   value="{{ user.last_name }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username"
+                                   value="{{ user.username }}" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="{{ user.email }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Role</label>
+                            <input type="text" class="form-control" id="role"
+                                   value="{{ user.get_role_display }}" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="date_joined" class="form-label">Date Joined</label>
+                            <input type="text" class="form-control" id="date_joined"
+                                   value="{{ user.date_joined|date:"M d, Y" }}" readonly>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Account Status</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Status:</strong>
+                    {% if user.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                        <span class="badge bg-warning">Admin</span>
+                    {% endif %}
+                </p>
+
+                <p><strong>Last Login:</strong>
+                    {% if user.last_login %}
+                        {{ user.last_login|date:"M d, Y H:i" }}
+                    {% else %}
+                        <span class="text-muted">Never</span>
+                    {% endif %}
+                </p>
+
+                {% if role_info.is_mentor or role_info.is_field_associate %}
+                    {% if village_info.has_village_assignments %}
+                        <p><strong>Assigned Villages:</strong>
+                            <span class="badge bg-info">{{ village_info.assigned_villages_count }}</span>
+                        </p>
+                        <div class="mt-3">
+                            <h6>Villages:</h6>
+                            <ul class="list-unstyled">
+                                {% for village in village_info.assigned_villages %}
+                                <li><i class="fas fa-map-marker-alt text-muted"></i> {{ village.name }}</li>
+                                {% empty %}
+                                <li class="text-muted">No villages assigned</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <p><strong>Assigned Villages:</strong>
+                            <span class="text-muted">None assigned</span>
+                        </p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        {% if perms.can_view_settings %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-cog"></i> Settings</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Contact your administrator to update profile information.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

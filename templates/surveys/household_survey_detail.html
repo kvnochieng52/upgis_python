@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-clipboard-list"></i> {{ page_title }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'surveys:survey_list' %}">Surveys</a></li>
+                <li class="breadcrumb-item active">{{ survey.household.name }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'surveys:household_survey_edit' survey.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{% url 'surveys:survey_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Surveys
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Survey Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Survey Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Survey Type:</strong>
+                            <span class="badge bg-primary">{{ survey.get_survey_type_display|default:survey.survey_type }}</span>
+                        </p>
+                        <p><strong>Survey Date:</strong> {{ survey.survey_date|date:"M d, Y"|default:"Not specified" }}</p>
+                        <p><strong>Survey Name:</strong> {{ survey.name|default:"General Survey" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Surveyor:</strong> {{ survey.surveyor.get_full_name|default:survey.surveyor|default:"Not specified" }}</p>
+                        <p><strong>Created:</strong> {{ survey.created_at|date:"M d, Y H:i" }}</p>
+                        <p><strong>Status:</strong>
+                            <span class="badge bg-success">Completed</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Household Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-home"></i> Household Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Household Name:</strong> {{ survey.household.name }}</p>
+                        <p><strong>Village:</strong> {{ survey.household.village.name|default:"Not specified" }}</p>
+                        <p><strong>Subcounty:</strong> {{ survey.household.village.subcounty|default:"Not specified" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Phone Number:</strong> {{ survey.household.phone_number|default:"Not provided" }}</p>
+                        <p><strong>Members:</strong> {{ survey.household.members.count }} people</p>
+                        <p><strong>Registration Date:</strong> {{ survey.household.created_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'households:household_detail' survey.household.pk %}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-eye"></i> View Household Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Survey Data -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Survey Data</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Economic Information</h6>
+                        <p><strong>Income Level:</strong> {{ survey.income_level|default:"Not assessed" }}</p>
+                        <p><strong>Savings Amount:</strong>
+                            {% if survey.savings_amount %}
+                                KES {{ survey.savings_amount|floatformat:2 }}
+                            {% else %}
+                                Not recorded
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Assets</h6>
+                        {% if survey.assets_owned %}
+                        <div class="border rounded p-2 bg-light">
+                            {{ survey.assets_owned|linebreaks }}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No assets recorded</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'surveys:household_survey_edit' survey.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit Survey
+                    </a>
+                    <a href="{% url 'households:household_detail' survey.household.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-home"></i> View Household
+                    </a>
+                    <a href="{% url 'surveys:household_survey_create' %}" class="btn btn-outline-success">
+                        <i class="fas fa-plus"></i> New Survey
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Survey Statistics -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-pie"></i> Household Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Total Members:</span>
+                    <strong>{{ survey.household.members.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Previous Surveys:</span>
+                    <strong>{{ survey.household.surveys.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Program Participants:</span>
+                    <strong>{{ survey.household.members.all|length }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Programs Enrolled:</span>
+                    <strong>{{ survey.household.program_participations.count }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

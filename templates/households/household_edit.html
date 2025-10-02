@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-edit"></i> {{ page_title }}</h1>
+    <a href="{% url 'households:household_detail' household.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Household
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-edit"></i> Edit Household Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="household_head" class="form-label">Household Head Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="household_head" name="household_head" value="{{ household.household_head }}" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone_number" name="phone_number" value="{{ household.phone_number|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="subcounty" class="form-label">Sub-County <span class="text-danger">*</span></label>
+                            <select class="form-select" id="subcounty" name="subcounty" required>
+                                <option value="">Select Sub-County</option>
+                                {% for subcounty in subcounties %}
+                                <option value="{{ subcounty.id }}" {% if household.subcounty_id == subcounty.id %}selected{% endif %}>{{ subcounty.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="village" class="form-label">Village <span class="text-danger">*</span></label>
+                            <select class="form-select" id="village" name="village" required>
+                                <option value="">Select Village</option>
+                                {% for village in villages %}
+                                <option value="{{ village.id }}" data-subcounty="{{ village.subcounty_obj_id }}" {% if household.village_id == village.id %}selected{% endif %}>{{ village.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="household_size" class="form-label">Household Size</label>
+                            <input type="number" class="form-control" id="household_size" name="household_size" min="1" value="{{ household.household_size }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="gender" class="form-label">Gender</label>
+                            <select class="form-select" id="gender" name="gender">
+                                <option value="">Select Gender</option>
+                                <option value="male" {% if household.gender == 'male' %}selected{% endif %}>Male</option>
+                                <option value="female" {% if household.gender == 'female' %}selected{% endif %}>Female</option>
+                                <option value="other" {% if household.gender == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="age" class="form-label">Age</label>
+                            <input type="number" class="form-control" id="age" name="age" min="18" max="120" value="{{ household.age|default:'' }}">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'households:household_detail' household.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Current Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Current Name:</strong> {{ household.household_head }}</p>
+                <p><strong>Current Village:</strong> {{ household.village.name|default:"Not specified" }}</p>
+                <p><strong>Current Size:</strong> {{ household.household_size }} members</p>
+                <p><strong>Registered:</strong> {{ household.created_at|date:"M d, Y" }}</p>
+
+                {% if household.ppi_score %}
+                <div class="alert alert-warning mt-3">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        This household has a PPI score of {{ household.ppi_score }}%. Consider the impact of changes on program eligibility.
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Filter villages based on selected subcounty
+document.getElementById('subcounty').addEventListener('change', function() {
+    const subcountyId = this.value;
+    const villageSelect = document.getElementById('village');
+    const allOptions = villageSelect.querySelectorAll('option');
+
+    // Reset village selection
+    villageSelect.value = '';
+
+    // Show/hide villages based on subcounty
+    allOptions.forEach(function(option) {
+        if (option.value === '') {
+            option.style.display = 'block';
+        } else if (subcountyId === '' || option.dataset.subcounty === subcountyId) {
+            option.style.display = 'block';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+});
+
+// Initialize village filtering on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const subcountySelect = document.getElementById('subcounty');
+    if (subcountySelect.value) {
+        subcountySelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

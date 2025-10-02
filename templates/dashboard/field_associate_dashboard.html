@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Field Associate Dashboard - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user-tie"></i> Field Associate Dashboard</h1>
+    <div class="text-muted">
+        Welcome, {{ user.get_full_name|default:user.username }} ({{ user.get_role_display }})
+    </div>
+</div>
+
+<!-- Field Associate Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stat-card stat-card-blue">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ stats.managed_mentors }}</h3>
+                    <p class="mb-0">Managed Mentors</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-green">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ stats.total_trainings }}</h3>
+                    <p class="mb-0">Total Trainings</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-chalkboard-teacher fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-orange">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ stats.active_trainings }}</h3>
+                    <p class="mb-0">Active Trainings</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-play-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ stats.households_in_training }}</h3>
+                    <p class="mb-0">Households in Training</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-home fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions for Field Associates -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Field Associate Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'training:training_list' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-chalkboard-teacher"></i> Manage Trainings
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-handshake"></i> Mentor Oversight
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'households:household_list' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-home"></i> Household Management
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'reports:report_list' %}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-chart-bar"></i> Field Reports
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'households:graduation_dashboard' %}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-graduation-cap"></i> Graduation Tracking
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'business_groups:group_list' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-users"></i> Business Groups
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'surveys:survey_list' %}" class="btn btn-outline-dark w-100">
+                            <i class="fas fa-clipboard-list"></i> Field Surveys
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'training:mentoring_analytics' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-chart-line"></i> Performance Analytics
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Field Associate Specific Sections -->
+<div class="row mt-4">
+    <!-- Training Management Overview -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h6><i class="fas fa-chalkboard-teacher"></i> Training Management</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Total Training Sessions:</strong><br>{{ stats.total_trainings }}</p>
+                <p><strong>Active Sessions:</strong><br>{{ stats.active_trainings }}</p>
+                <p><strong>Households Enrolled:</strong><br>{{ stats.households_in_training }}</p>
+                <p class="mb-0"><strong>Completion Rate:</strong><br>85%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mentor Supervision -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h6><i class="fas fa-user-friends"></i> Mentor Supervision</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Mentors Supervised:</strong><br>{{ stats.managed_mentors }}</p>
+                <p><strong>Active Mentors:</strong><br>{{ stats.managed_mentors }}</p>
+                <p><strong>Performance Rating:</strong><br>92% Average</p>
+                <p class="mb-0"><strong>Training Compliance:</strong><br>98%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Field Operations -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-map-marked-alt"></i> Field Operations</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Villages Covered:</strong><br>8 Villages</p>
+                <p><strong>Field Visits This Month:</strong><br>45 Visits</p>
+                <p><strong>Household Coverage:</strong><br>95%</p>
+                <p class="mb-0"><strong>Data Collection:</strong><br>Current</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Program Performance -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-trophy"></i> Program Performance</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>UPG Program Progress:</strong><br>Month 8 of 12</p>
+                <p><strong>Graduation Rate:</strong><br>78%</p>
+                <p><strong>Goal Achievement:</strong><br>On Track</p>
+                <p class="mb-0"><strong>Quality Score:</strong><br>94%</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Field Associate Workflow -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tasks"></i> Field Associate Responsibilities</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md">
+                        <div class="bg-primary text-white rounded p-3 mb-2">
+                            <i class="fas fa-user-friends fa-2x mb-2"></i>
+                            <h6>1. Mentor Supervision</h6>
+                            <small>Oversee and support mentors</small>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-arrow-right text-primary fa-2x"></i>
+                    </div>
+                    <div class="col-md">
+                        <div class="bg-success text-white rounded p-3 mb-2">
+                            <i class="fas fa-chalkboard-teacher fa-2x mb-2"></i>
+                            <h6>2. Training Coordination</h6>
+                            <small>Organize training sessions</small>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-arrow-right text-success fa-2x"></i>
+                    </div>
+                    <div class="col-md">
+                        <div class="bg-warning text-dark rounded p-3 mb-2">
+                            <i class="fas fa-clipboard-check fa-2x mb-2"></i>
+                            <h6>3. Quality Assurance</h6>
+                            <small>Monitor program quality</small>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-arrow-right text-warning fa-2x"></i>
+                    </div>
+                    <div class="col-md">
+                        <div class="bg-info text-white rounded p-3 mb-2">
+                            <i class="fas fa-file-alt fa-2x mb-2"></i>
+                            <h6>4. Reporting</h6>
+                            <small>Generate field reports</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-clipboard-check"></i> {{ page_title }}</h1>
+    <a href="{% url 'upg_grants:pending_reviews' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Pending Reviews
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Application Details -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-file-alt"></i> Application Details</h5>
+            </div>
+            <div class="card-body">
+                <h4>{{ application.title }}</h4>
+                <p><strong>Grant Type:</strong> <span class="badge bg-info">{{ application.get_grant_type_display }}</span></p>
+                <p><strong>Requested Amount:</strong> <span class="text-success fw-bold">KES {{ application.requested_amount|floatformat:2 }}</span></p>
+                <p><strong>Program:</strong> {% if application.program %}{{ application.program.name }} - {{ application.program.cycle }}{% else %}<em class="text-muted">Not program-specific</em>{% endif %}</p>
+
+                <hr>
+
+                <h6><strong>Purpose:</strong></h6>
+                <p>{{ application.purpose }}</p>
+
+                {% if application.business_plan %}
+                <h6><strong>Business Plan:</strong></h6>
+                <p>{{ application.business_plan }}</p>
+                {% endif %}
+
+                <h6><strong>Expected Outcomes:</strong></h6>
+                <p>{{ application.expected_outcomes }}</p>
+
+                {% if application.budget_breakdown %}
+                <h6><strong>Budget Breakdown:</strong></h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item, amount in application.budget_breakdown.items %}
+                        <tr>
+                            <td>{{ item }}</td>
+                            <td>KES {{ amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Review Form -->
+        {% if application.status in 'submitted,under_review' %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-edit"></i> Review & Decision</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    {% if can_review and application.status == 'submitted' %}
+                    <div class="mb-3">
+                        <button type="submit" name="action" value="review" class="btn btn-primary">
+                            <i class="fas fa-clipboard-check"></i> Mark as Under Review
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="review_notes" class="form-label">Review Notes</label>
+                        <textarea class="form-control" id="review_notes" name="review_notes" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="review_score" class="form-label">Review Score (0-100)</label>
+                        <input type="number" class="form-control" id="review_score" name="review_score" min="0" max="100">
+                    </div>
+                    {% endif %}
+
+                    {% if can_approve %}
+                    <hr>
+                    <h6>Final Decision (Manager/Director/Executive Only)</h6>
+
+                    <div class="mb-3">
+                        <label for="approved_amount" class="form-label">Approved Amount (KES)</label>
+                        <input type="number" step="0.01" class="form-control" id="approved_amount" name="approved_amount"
+                               value="{{ application.requested_amount }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="approval_notes" class="form-label">Approval/Rejection Notes</label>
+                        <textarea class="form-control" id="approval_notes" name="approval_notes" rows="3" required></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="action" value="approve" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Approve Application
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger">
+                            <i class="fas fa-times-circle"></i> Reject Application
+                        </button>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-4">
+        <!-- Household Info -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-home"></i> Household Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong> {{ application.household.name }}</p>
+                <p><strong>Village:</strong> {{ application.household.village.name }}</p>
+                <p><strong>Sub-County:</strong> {{ application.household.subcounty.name|default:"Not set" }}</p>
+                <p><strong>Phone:</strong> {{ application.household.phone_number }}</p>
+                <a href="{% url 'households:household_detail' application.household.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye"></i> View Household
+                </a>
+            </div>
+        </div>
+
+        <!-- Application Status -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Application Status</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Status:</strong>
+                    {% if application.status == 'submitted' %}
+                    <span class="badge bg-warning">{{ application.get_status_display }}</span>
+                    {% elif application.status == 'under_review' %}
+                    <span class="badge bg-primary">{{ application.get_status_display }}</span>
+                    {% elif application.status == 'approved' %}
+                    <span class="badge bg-success">{{ application.get_status_display }}</span>
+                    {% elif application.status == 'rejected' %}
+                    <span class="badge bg-danger">{{ application.get_status_display }}</span>
+                    {% endif %}
+                </p>
+
+                <p><strong>Submitted:</strong> {{ application.submission_date|date:"M d, Y" }}</p>
+                <p><strong>Submitted By:</strong> {{ application.submitted_by.get_full_name }}</p>
+
+                {% if application.reviewed_by %}
+                <hr>
+                <p><strong>Reviewed By:</strong> {{ application.reviewed_by.get_full_name }}</p>
+                <p><strong>Review Date:</strong> {{ application.review_date|date:"M d, Y" }}</p>
+                {% if application.review_score %}
+                <p><strong>Review Score:</strong> {{ application.review_score }}/100</p>
+                {% endif %}
+                {% endif %}
+
+                {% if application.approved_by %}
+                <hr>
+                <p><strong>Approved By:</strong> {{ application.approved_by.get_full_name }}</p>
+                <p><strong>Approval Date:</strong> {{ application.approval_date|date:"M d, Y" }}</p>
+                {% if application.approved_amount %}
+                <p><strong>Approved Amount:</strong> KES {{ application.approved_amount|floatformat:2 }}</p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

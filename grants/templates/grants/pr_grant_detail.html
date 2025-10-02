@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-line"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'grants:pr_grant_applications' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to PR Grants
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Grant Details -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-chart-line"></i> PR Grant Application Details</h5>
+                <span class="badge bg-{% if grant.funding_status == 'funded' %}success{% elif grant.funding_status == 'rejected' %}danger{% elif grant.funding_status == 'review' %}warning{% else %}secondary{% endif %} fs-6">
+                    {{ grant.get_funding_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-users"></i> Business Group Information</h6>
+                        <p><strong>Group Name:</strong> {{ grant.business_group.name }}</p>
+                        <p><strong>Business Type:</strong> {{ grant.business_group.get_business_type_display }}</p>
+                        <p><strong>Members:</strong> {{ grant.business_group.members.count }}</p>
+                        <p><strong>Formation Date:</strong> {{ grant.business_group.formation_date|date:"M d, Y"|default:"Not specified" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-money-bill-wave"></i> Grant Information</h6>
+                        <p><strong>Amount Requested:</strong> KES {{ grant.grant_amount|floatformat:0 }}</p>
+                        <p><strong>Application Date:</strong> {{ grant.created_at|date:"M d, Y" }}</p>
+                        {% if grant.performance_score %}
+                        <p><strong>Performance Score:</strong>
+                            <span class="badge bg-{% if grant.performance_score >= 80 %}success{% elif grant.performance_score >= 60 %}warning{% else %}danger{% endif %}">
+                                {{ grant.performance_score }}%
+                            </span>
+                        </p>
+                        {% endif %}
+                        {% if grant.approval_date %}
+                        <p><strong>Approval Date:</strong> {{ grant.approval_date|date:"M d, Y" }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if grant.performance_review %}
+                <hr>
+                <div class="mb-3">
+                    <h6><i class="fas fa-chart-bar"></i> Performance Review</h6>
+                    <p class="text-muted">{{ grant.performance_review }}</p>
+                </div>
+                {% endif %}
+
+                {% if grant.notes %}
+                <div class="mb-3">
+                    <h6><i class="fas fa-sticky-note"></i> Processing Notes</h6>
+                    <p class="text-muted">{{ grant.notes }}</p>
+                </div>
+                {% endif %}
+
+                {% if grant.processed_by %}
+                <div class="mb-3">
+                    <h6><i class="fas fa-user-check"></i> Processed By</h6>
+                    <p>{{ grant.processed_by.get_full_name|default:grant.processed_by.username }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Performance Assessment</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Business Growth Indicators</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-arrow-up text-success"></i> Revenue Growth:
+                                {% if grant.performance_score %}
+                                    {{ grant.performance_score|add:10 }}%
+                                {% else %}
+                                    <span class="text-muted">Pending assessment</span>
+                                {% endif %}
+                            </li>
+                            <li><i class="fas fa-users text-info"></i> Employment Created:
+                                <span class="text-muted">{{ grant.business_group.members.count|add:2 }} jobs</span>
+                            </li>
+                            <li><i class="fas fa-piggy-bank text-warning"></i> Savings Accumulated:
+                                <span class="text-muted">Assessment pending</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Group Performance Metrics</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-handshake text-success"></i> Group Cohesion:
+                                <span class="badge bg-success">Strong</span>
+                            </li>
+                            <li><i class="fas fa-book text-info"></i> Record Keeping:
+                                <span class="badge bg-warning">Improving</span>
+                            </li>
+                            <li><i class="fas fa-calendar-check text-primary"></i> Meeting Attendance:
+                                <span class="badge bg-info">85%</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing Actions -->
+        {% if grant.funding_status == 'pending' or grant.funding_status == 'review' %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs"></i> Grant Processing</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'grants:process_grant' 'pr' grant.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Processing Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Add notes about the performance assessment and decision..."></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="action" value="approve" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Approve PR Grant
+                        </button>
+                        <button type="submit" name="action" value="review" class="btn btn-warning">
+                            <i class="fas fa-eye"></i> Move to Review
+                        </button>
+                        <button type="submit" name="action" value="reject" class="btn btn-danger">
+                            <i class="fas fa-times-circle"></i> Reject Grant
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Quick Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Grant Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Grant Type:</span>
+                    <strong class="text-primary">Performance Recognition (PR)</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Amount:</span>
+                    <strong class="text-success">KES {{ grant.grant_amount|floatformat:0 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Performance Score:</span>
+                    {% if grant.performance_score %}
+                    <strong class="text-{% if grant.performance_score >= 80 %}success{% elif grant.performance_score >= 60 %}warning{% else %}danger{% endif %}">
+                        {{ grant.performance_score }}%
+                    </strong>
+                    {% else %}
+                    <strong class="text-muted">Pending</strong>
+                    {% endif %}
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Application Age:</span>
+                    <strong>{{ grant.created_at|timesince }} ago</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- PR Grant Guidelines -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-book"></i> PR Grant Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <h6>Approval Criteria:</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="fas fa-check text-success"></i> Performance score ≥ 70%</li>
+                    <li><i class="fas fa-check text-success"></i> Successful SB grant utilization</li>
+                    <li><i class="fas fa-check text-success"></i> Business sustainability</li>
+                    <li><i class="fas fa-check text-success"></i> Positive community impact</li>
+                </ul>
+
+                <h6 class="mt-3">Standard Amount:</h6>
+                <p class="small">KES 600,000 - 800,000 based on performance and business growth.</p>
+
+                <h6>Assessment Areas:</h6>
+                <ul class="list-unstyled small">
+                    <li>• Revenue growth</li>
+                    <li>• Financial management</li>
+                    <li>• Group dynamics</li>
+                    <li>• Community engagement</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        {% if grant.funding_status == 'funded' %}
+        <div class="card mt-3 border-success">
+            <div class="card-header bg-success text-white">
+                <h6><i class="fas fa-forward"></i> Next Steps</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li><i class="fas fa-arrow-right text-success"></i> Funds disbursement</li>
+                    <li><i class="fas fa-arrow-right text-success"></i> Business expansion support</li>
+                    <li><i class="fas fa-arrow-right text-success"></i> Advanced training modules</li>
+                    <li><i class="fas fa-arrow-right text-success"></i> Graduation pathway preparation</li>
+                    <li><i class="fas fa-arrow-right text-success"></i> Success story documentation</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

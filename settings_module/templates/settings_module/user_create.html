@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user-plus"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'settings:user_management' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Users
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-plus"></i> New User Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                            <div class="form-text">Unique username for login</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">User Role <span class="text-danger">*</span></label>
+                            <select class="form-select" id="role" name="role" required>
+                                {% for value, label in role_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="password" name="password" required minlength="8">
+                            <div class="form-text">Minimum 8 characters</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'settings:user_management' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> User Role Descriptions</h6>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="roleAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingCountyExec">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCountyExec">
+                                County Executive
+                            </button>
+                        </h2>
+                        <div id="collapseCountyExec" class="accordion-collapse collapse" data-bs-parent="#roleAccordion">
+                            <div class="accordion-body">
+                                CECM & Governor level access. Program oversight, high-level reports, grant approvals.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingCountyAssembly">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCountyAssembly">
+                                County Assembly
+                            </button>
+                        </h2>
+                        <div id="collapseCountyAssembly" class="accordion-collapse collapse" data-bs-parent="#roleAccordion">
+                            <div class="accordion-body">
+                                Ward-specific data access, program progress monitoring, beneficiary oversight.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingICT">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseICT">
+                                ICT Administrator
+                            </button>
+                        </h2>
+                        <div id="collapseICT" class="accordion-collapse collapse" data-bs-parent="#roleAccordion">
+                            <div class="accordion-body">
+                                Full system access, user management, technical configuration, system monitoring.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingME">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseME">
+                                M&E Staff
+                            </button>
+                        </h2>
+                        <div id="collapseME" class="accordion-collapse collapse" data-bs-parent="#roleAccordion">
+                            <div class="accordion-body">
+                                Full data access, survey creation, report generation, analytics dashboard.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingField">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseField">
+                                Field Associate
+                            </button>
+                        </h2>
+                        <div id="collapseField" class="accordion-collapse collapse" data-bs-parent="#roleAccordion">
+                            <div class="accordion-body">
+                                Village management, mentor assignment, grant processing, quality assurance.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingMentor">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMentor">
+                                Mentor
+                            </button>
+                        </h2>
+                        <div id="collapseMentor" class="accordion-collapse collapse" data-bs-parent="#roleAccordion">
+                            <div class="accordion-body">
+                                Household registration, survey collection, training management, village-level dashboards.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingBeneficiary">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBeneficiary">
+                                Beneficiary
+                            </button>
+                        </h2>
+                        <div id="collapseBeneficiary" class="accordion-collapse collapse" data-bs-parent="#roleAccordion">
+                            <div class="accordion-body">
+                                Read-only access to program information, personal dashboard, application status.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-shield-alt"></i> Security Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Use strong passwords</li>
+                    <li><i class="fas fa-check text-success"></i> Assign appropriate roles</li>
+                    <li><i class="fas fa-check text-success"></i> Regular access reviews</li>
+                    <li><i class="fas fa-check text-success"></i> Deactivate unused accounts</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

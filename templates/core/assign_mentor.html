@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user-plus"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'core:mentor_villages_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-list"></i> View Assignments
+        </a>
+        <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-check"></i> Assign Mentor to Villages</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="mentor_id" class="form-label">Select Mentor <span class="text-danger">*</span></label>
+                        <select class="form-select" id="mentor_id" name="mentor_id" required>
+                            <option value="">Choose a mentor...</option>
+                            {% for mentor in mentors %}
+                            <option value="{{ mentor.id }}">
+                                {{ mentor.get_full_name }} - {{ mentor.email }}
+                                {% if mentor.profile.assigned_villages.count > 0 %}
+                                ({{ mentor.profile.assigned_villages.count }} villages)
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Select Villages <span class="text-danger">*</span></label>
+                        <div class="form-text mb-2">
+                            Hold Ctrl (Windows) or Cmd (Mac) to select multiple villages
+                        </div>
+
+                        {% if villages %}
+                        {% regroup villages by subcounty_obj.name as village_groups %}
+
+                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                            {% for group in village_groups %}
+                            <div class="mb-3">
+                                <h6 class="text-muted">{{ group.grouper|default:"No Subcounty" }}</h6>
+                                {% for village in group.list %}
+                                <div class="form-check">
+                                    <input class="form-check-input village-checkbox" type="checkbox"
+                                           name="village_ids[]" value="{{ village.id }}" id="village_{{ village.id }}">
+                                    <label class="form-check-label" for="village_{{ village.id }}">
+                                        {{ village.name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="select-all">
+                                <i class="fas fa-check-square"></i> Select All
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="deselect-all">
+                                <i class="fas fa-square"></i> Deselect All
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> No villages available. Please contact your administrator.
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Assign Villages
+                        </button>
+                        <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Instructions</h6>
+            </div>
+            <div class="card-body">
+                <p class="small">
+                    <strong>How to assign mentors to villages:</strong>
+                </p>
+                <ol class="small">
+                    <li>Select a mentor from the dropdown list</li>
+                    <li>Check the villages you want to assign to this mentor</li>
+                    <li>Click "Assign Villages" to save</li>
+                </ol>
+                <hr>
+                <p class="small">
+                    <strong>Note:</strong> Once a mentor is assigned to a village, all households in that village will automatically be under their supervision.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('select-all').addEventListener('click', function() {
+    document.querySelectorAll('.village-checkbox').forEach(checkbox => {
+        checkbox.checked = true;
+    });
+});
+
+document.getElementById('deselect-all').addEventListener('click', function() {
+    document.querySelectorAll('.village-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+});
+</script>
+{% endblock %}

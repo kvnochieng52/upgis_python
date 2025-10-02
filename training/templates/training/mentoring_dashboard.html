@@ -1,0 +1,388 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-handshake"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'training:mentoring_reports' %}" class="btn btn-info btn-sm">
+                <i class="fas fa-file-alt"></i> View Reports
+            </a>
+            {% if user_role == 'mentor' %}
+            <a href="{% url 'training:log_visit' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-home"></i> Log Visit
+            </a>
+            <a href="{% url 'training:log_phone_nudge' %}" class="btn btn-info btn-sm">
+                <i class="fas fa-phone"></i> Log Phone Call
+            </a>
+            <a href="{% url 'training:create_mentoring_report' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> Create Report
+            </a>
+            {% endif %}
+            {% if user_role != 'mentor' %}
+            <a href="{% url 'training:mentoring_analytics' %}" class="btn btn-warning btn-sm">
+                <i class="fas fa-chart-line"></i> Analytics
+            </a>
+            {% endif %}
+            <a href="{% url 'training:training_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Training
+            </a>
+        </div>
+    </div>
+
+    <!-- Monthly Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ monthly_stats.visits_this_month }}</h4>
+                            <p class="card-text">Visits This Month</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-home fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ monthly_stats.phone_nudges_this_month }}</h4>
+                            <p class="card-text">Phone Nudges</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-phone fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ monthly_stats.trainings_this_month }}</h4>
+                            <p class="card-text">Trainings Conducted</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chalkboard-teacher fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ monthly_stats.active_households }}</h4>
+                            <p class="card-text">Active Households</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Activities -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-clock"></i> Recent Visits
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_visits %}
+                    <div class="timeline">
+                        {% for visit in recent_visits %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ visit.household.name }}</h6>
+                                <p class="mb-1">{{ visit.topic }}</p>
+                                <small class="text-muted">
+                                    <span class="badge bg-{% if visit.visit_type == 'on_site' %}success{% elif visit.visit_type == 'phone' %}info{% else %}warning{% endif %}">
+                                        {{ visit.get_visit_type_display }}
+                                    </span>
+                                    - {{ visit.visit_date|date:"M d, Y" }}
+                                    {% if user_role != 'mentor' %}by {{ visit.mentor.get_full_name }}{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">No recent visits</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-phone"></i> Recent Phone Nudges
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_phone_nudges %}
+                    <div class="list-group list-group-flush">
+                        {% for nudge in recent_phone_nudges %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ nudge.household.name }}</h6>
+                                    <p class="mb-1">{{ nudge.get_nudge_type_display }}</p>
+                                    <small class="text-muted">
+                                        {{ nudge.call_date|date:"M d, Y H:i" }} - {{ nudge.duration_minutes }} min
+                                        {% if user_role != 'mentor' %}- {{ nudge.mentor.get_full_name }}{% endif %}
+                                    </small>
+                                </div>
+                                <span class="badge bg-{% if nudge.successful_contact %}success{% else %}danger{% endif %}">
+                                    {% if nudge.successful_contact %}Connected{% else %}No Answer{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">No recent phone nudges</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Distribution Charts -->
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-pie"></i> Visit Type Distribution ({{ current_month }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="visitTypeChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Phone Nudge Types ({{ current_month }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="nudgeTypeChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mentor Performance (Only for non-mentors) -->
+    {% if user_role != 'mentor' and mentor_stats %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-trophy"></i> Mentor Performance ({{ current_month }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Mentor</th>
+                                    <th>Visits</th>
+                                    <th>Phone Nudges</th>
+                                    <th>Active Households</th>
+                                    <th>Avg Call Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stats in mentor_stats %}
+                                <tr>
+                                    <td>{{ stats.mentor.get_full_name }}</td>
+                                    <td>{{ stats.visits_count }}</td>
+                                    <td>{{ stats.phone_nudges_count }}</td>
+                                    <td>{{ stats.active_households }}</td>
+                                    <td>{{ stats.avg_call_duration|floatformat:1 }} min</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Reports -->
+    {% if recent_reports %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-file-alt"></i> Recent Mentoring Reports
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    {% if user_role != 'mentor' %}<th>Mentor</th>{% endif %}
+                                    <th>Period</th>
+                                    <th>Type</th>
+                                    <th>Households Visited</th>
+                                    <th>Phone Nudges</th>
+                                    <th>Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in recent_reports %}
+                                <tr>
+                                    {% if user_role != 'mentor' %}<td>{{ report.mentor.get_full_name }}</td>{% endif %}
+                                    <td>{{ report.period_start|date:"M d" }} - {{ report.period_end|date:"M d, Y" }}</td>
+                                    <td>{{ report.get_reporting_period_display }}</td>
+                                    <td>{{ report.households_visited }}</td>
+                                    <td>{{ report.phone_nudges_made }}</td>
+                                    <td>{{ report.submitted_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'training:mentoring_report_detail' report.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 15px;
+    padding-left: 25px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -8px;
+    top: 5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Visit Type Chart
+const visitTypeCtx = document.getElementById('visitTypeChart').getContext('2d');
+const visitTypeData = {
+    labels: [{% for item in visit_type_stats %}'{{ item.visit_type|capfirst }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for item in visit_type_stats %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#28a745', '#17a2b8', '#ffc107'],
+        borderWidth: 1
+    }]
+};
+
+new Chart(visitTypeCtx, {
+    type: 'doughnut',
+    data: visitTypeData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Phone Nudge Type Chart
+const nudgeTypeCtx = document.getElementById('nudgeTypeChart').getContext('2d');
+const nudgeTypeData = {
+    labels: [{% for item in nudge_type_stats %}'{{ item.nudge_type|title }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Count',
+        data: [{% for item in nudge_type_stats %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: '#17a2b8',
+        borderColor: '#17a2b8',
+        borderWidth: 1
+    }]
+};
+
+new Chart(nudgeTypeCtx, {
+    type: 'bar',
+    data: nudgeTypeData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

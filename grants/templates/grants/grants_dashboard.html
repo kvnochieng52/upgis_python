@@ -1,0 +1,547 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ total_grants }}</h4>
+                            <p class="card-text">Total Grants</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-money-bill-wave fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'grants:sb_grant_applications' %}" class="text-white">
+                        <i class="fas fa-arrow-right"></i> View All Grants
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">KES {{ total_funding|floatformat:0 }}</h4>
+                            <p class="card-text">Total Funding</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-coins fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="#" class="text-white">
+                        <i class="fas fa-chart-line"></i> View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ sb_grants.pending|add:pr_grants.pending|add:household_grants.pending }}</h4>
+                            <p class="card-text">Pending Review</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'upg_grants:application_list' %}?status=submitted" class="text-white">
+                        <i class="fas fa-eye"></i> Review Now
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">KES {{ disbursements.total_disbursed|floatformat:0 }}</h4>
+                            <p class="card-text">Total Disbursed</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-hand-holding-usd fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="#" class="text-white">
+                        <i class="fas fa-list"></i> Disbursement History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grant Application Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-invoice-dollar"></i> Apply for Grant
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Select applicant type and entity to submit a grant application:</p>
+                    <form method="get" action="{% url 'upg_grants:application_list' %}" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="applicant-type" class="form-label">Applicant Type</label>
+                            <select class="form-select" id="applicant-type" required onchange="toggleApplicantSelect()">
+                                <option value="">-- Select Type --</option>
+                                <option value="household">Household</option>
+                                <option value="business_group">Business Group</option>
+                                <option value="savings_group">Savings Group</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label for="applicant-select" class="form-label">Select Applicant</label>
+                            <select class="form-select" id="applicant-select" required disabled>
+                                <option value="">-- Select Applicant Type First --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <div>
+                                <button type="button" class="btn btn-success" onclick="applyForGrant()">
+                                    <i class="fas fa-plus-circle"></i> Apply for Grant
+                                </button>
+                                <a href="{% url 'upg_grants:application_list' %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-list"></i> View All
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function toggleApplicantSelect() {
+        const applicantType = document.getElementById('applicant-type').value;
+        const applicantSelect = document.getElementById('applicant-select');
+
+        applicantSelect.innerHTML = '<option value="">-- Select --</option>';
+        applicantSelect.disabled = false;
+
+        if (applicantType === 'household') {
+            {% for household in households %}
+            applicantSelect.innerHTML += '<option value="{{ household.id }}">{{ household.name }}{% if household.village %} - {{ household.village.name }}{% endif %}</option>';
+            {% endfor %}
+        } else if (applicantType === 'business_group') {
+            {% for bg in business_groups %}
+            applicantSelect.innerHTML += '<option value="{{ bg.id }}">{{ bg.name }}{% if bg.business_type %} ({{ bg.business_type }}){% endif %}</option>';
+            {% endfor %}
+            {% if not business_groups %}
+            applicantSelect.innerHTML += '<option value="" disabled>No business groups available</option>';
+            {% endif %}
+        } else if (applicantType === 'savings_group') {
+            {% for sg in savings_groups %}
+            applicantSelect.innerHTML += '<option value="{{ sg.id }}">{{ sg.name }} - {{ sg.total_members }} members</option>';
+            {% endfor %}
+            {% if not savings_groups %}
+            applicantSelect.innerHTML += '<option value="" disabled>No savings groups available</option>';
+            {% endif %}
+        }
+    }
+
+    function applyForGrant() {
+        const applicantType = document.getElementById('applicant-type').value;
+        const applicantId = document.getElementById('applicant-select').value;
+
+        if (!applicantType || !applicantId) {
+            alert('Please select both applicant type and applicant');
+            return;
+        }
+
+        window.location.href = `/grants/apply/?type=${applicantType}&id=${applicantId}`;
+    }
+    </script>
+
+    <div class="row">
+        <!-- Household Grants Section -->
+        <div class="col-lg-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-home"></i> Household Grant Applications
+                    </h5>
+                    <div class="card-tools">
+                        <a href="{% url 'upg_grants:application_list' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-list"></i> View All Household Grants
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 col-md-2">
+                            <div class="border-right">
+                                <h4 class="text-primary">{{ household_grants.total }}</h4>
+                                <p class="text-muted">Total</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="border-right">
+                                <h4 class="text-warning">{{ household_grants.pending }}</h4>
+                                <p class="text-muted">Pending</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="border-right">
+                                <h4 class="text-info">{{ household_grants.approved }}</h4>
+                                <p class="text-muted">Approved</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="border-right">
+                                <h4 class="text-success">{{ household_grants.disbursed }}</h4>
+                                <p class="text-muted">Disbursed</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <div class="border-right">
+                                <h4 class="text-danger">{{ household_grants.rejected }}</h4>
+                                <p class="text-muted">Rejected</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-2">
+                            <h4 class="text-success">KES {{ household_grants.total_amount_approved|floatformat:0 }}</h4>
+                            <p class="text-muted">Total Approved</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mt-3">
+                        <h6>Recent Household Grant Applications</h6>
+                        {% if recent_household_grants %}
+                        <div class="list-group list-group-flush">
+                            {% for grant in recent_household_grants %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ grant.household.name }}</strong>
+                                        <br><small class="text-muted">{{ grant.title }} - {{ grant.get_grant_type_display }}</small>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="badge bg-{% if grant.status == 'submitted' %}warning{% elif grant.status == 'under_review' %}primary{% elif grant.status == 'approved' %}success{% elif grant.status == 'rejected' %}danger{% endif %}">
+                                            {{ grant.get_status_display }}
+                                        </span>
+                                        <br><small class="text-muted">KES {{ grant.requested_amount|floatformat:0 }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-3">No household grant applications yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SB Grants Section -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-seedling"></i> Seed Business (SB) Grants
+                    </h5>
+                    <div class="card-tools">
+                        <a href="{% url 'grants:sb_grant_applications' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-list"></i> View All SB Grants
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 col-md-3">
+                            <div class="border-right">
+                                <h4 class="text-primary">{{ sb_grants.total }}</h4>
+                                <p class="text-muted">Total</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border-right">
+                                <h4 class="text-warning">{{ sb_grants.pending }}</h4>
+                                <p class="text-muted">Pending</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border-right">
+                                <h4 class="text-info">{{ sb_grants.approved }}</h4>
+                                <p class="text-muted">Approved</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <h4 class="text-success">{{ sb_grants.funded }}</h4>
+                            <p class="text-muted">Funded</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mt-3">
+                        <h6>Recent SB Grant Applications</h6>
+                        {% if recent_sb_grants %}
+                        <div class="list-group list-group-flush">
+                            {% for grant in recent_sb_grants %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ grant.business_group.name }}</strong>
+                                        <br><small class="text-muted">{{ grant.business_group.business_type|title }}</small>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="badge bg-{% if grant.status == 'pending' %}warning{% elif grant.status == 'approved' %}info{% elif grant.status == 'funded' %}success{% else %}secondary{% endif %}">
+                                            {{ grant.get_status_display }}
+                                        </span>
+                                        <br><small class="text-muted">KES {{ grant.get_grant_amount|floatformat:0 }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-3">No SB grant applications yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PR Grants Section -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-trophy"></i> Performance Recognition (PR) Grants
+                    </h5>
+                    <div class="card-tools">
+                        <a href="{% url 'grants:pr_grant_applications' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-list"></i> View All PR Grants
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 col-md-3">
+                            <div class="border-right">
+                                <h4 class="text-primary">{{ pr_grants.total }}</h4>
+                                <p class="text-muted">Total</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border-right">
+                                <h4 class="text-warning">{{ pr_grants.pending }}</h4>
+                                <p class="text-muted">Pending</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="border-right">
+                                <h4 class="text-info">{{ pr_grants.approved }}</h4>
+                                <p class="text-muted">Approved</p>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <h4 class="text-success">{{ pr_grants.funded }}</h4>
+                            <p class="text-muted">Funded</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mt-3">
+                        <h6>Recent PR Grant Applications</h6>
+                        {% if recent_pr_grants %}
+                        <div class="list-group list-group-flush">
+                            {% for grant in recent_pr_grants %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>{{ grant.business_group.name }}</strong>
+                                        <br><small class="text-muted">{{ grant.business_group.business_type|title }}</small>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="badge bg-{% if grant.status == 'pending' %}warning{% elif grant.status == 'approved' %}info{% elif grant.status == 'funded' %}success{% else %}secondary{% endif %}">
+                                            {{ grant.get_status_display }}
+                                        </span>
+                                        <br><small class="text-muted">KES {{ grant.get_grant_amount|floatformat:0 }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center py-3">No PR grant applications yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disbursements Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-money-check-alt"></i> Grant Disbursements
+                    </h5>
+                    <div class="card-tools">
+                        <div class="btn-group">
+                            <button class="btn btn-success btn-sm">
+                                <i class="fas fa-plus"></i> New Disbursement
+                            </button>
+                            <a href="{% url 'reports:download_grants_report' %}" class="btn btn-info btn-sm">
+                                <i class="fas fa-download"></i> Export Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-4">
+                        <div class="col-md-3">
+                            <h4 class="text-success">{{ disbursements.completed_disbursements }}</h4>
+                            <p class="text-muted">Completed Disbursements</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-warning">{{ disbursements.pending_disbursements }}</h4>
+                            <p class="text-muted">Pending Disbursements</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-primary">KES {{ disbursements.total_disbursed|floatformat:0 }}</h4>
+                            <p class="text-muted">Total Amount Disbursed</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h4 class="text-info">{{ disbursements.completed_disbursements|add:disbursements.pending_disbursements }}</h4>
+                            <p class="text-muted">Total Grants Processed</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="mb-3">Disbursement Breakdown by Grant Type</h6>
+                    <div class="row text-center mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="text-success">KES {{ disbursements.sb_disbursed|floatformat:0 }}</h5>
+                                    <p class="text-muted mb-0">SB Grants Disbursed</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="text-info">KES {{ disbursements.pr_disbursed|floatformat:0 }}</h5>
+                                    <p class="text-muted mb-0">PR Grants Disbursed</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="text-primary">KES {{ disbursements.household_disbursed|floatformat:0 }}</h5>
+                                    <p class="text-muted mb-0">Household Grants Disbursed</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'grants:sb_grant_applications' %}?status=pending" class="btn btn-outline-warning btn-block h-100">
+                                <i class="fas fa-eye fa-2x d-block mb-2"></i>
+                                <strong>Review Pending SB Grants</strong>
+                                <br><small>{{ sb_grants.pending }} applications waiting</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'grants:pr_grant_applications' %}?status=pending" class="btn btn-outline-warning btn-block h-100">
+                                <i class="fas fa-eye fa-2x d-block mb-2"></i>
+                                <strong>Review Pending PR Grants</strong>
+                                <br><small>{{ pr_grants.pending }} applications waiting</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'upg_grants:application_list' %}?status=approved" class="btn btn-outline-success btn-block h-100">
+                                <i class="fas fa-money-bill-wave fa-2x d-block mb-2"></i>
+                                <strong>Process Approved Grants</strong>
+                                <br><small>{{ sb_grants.approved|add:pr_grants.approved|add:household_grants.approved }} ready for funding</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="dropdown">
+                                <button class="btn btn-outline-info btn-block h-100 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-chart-line fa-2x d-block mb-2"></i>
+                                    <strong>Generate Reports</strong>
+                                    <br><small>Monthly and quarterly reports</small>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'reports:download_grants_report' %}">
+                                        <i class="fas fa-download me-2"></i>Grants Report (CSV)
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'reports:report_list' %}">
+                                        <i class="fas fa-list me-2"></i>All Reports
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{% url 'reports:performance_dashboard' %}">
+                                        <i class="fas fa-chart-bar me-2"></i>Performance Dashboard
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function applyForGrant() {
+    const householdId = document.getElementById('household-select').value;
+    if (!householdId) {
+        alert('Please select a household first');
+        return;
+    }
+    window.location.href = '/upg-grants/applications/create/' + householdId + '/';
+}
+</script>
+{% endblock %}

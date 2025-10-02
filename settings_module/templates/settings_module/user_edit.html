@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user-edit"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'settings:user_management' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Users
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-user-edit"></i> Edit User Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="username" name="username" value="{{ user_obj.username }}" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user_obj.email }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user_obj.first_name }}">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user_obj.last_name }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">User Role</label>
+                            <select class="form-select" id="role" name="role">
+                                {% for value, label in role_choices %}
+                                <option value="{{ value }}" {% if user_obj.role == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="password" name="password" minlength="8">
+                            <div class="form-text">Leave blank to keep current password</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'settings:user_management' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> User Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Current Status:</strong>
+                    {% if user_obj.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                    {% if user_obj.is_superuser %}
+                        <span class="badge bg-warning">Admin</span>
+                    {% endif %}
+                </p>
+                <p><strong>Date Joined:</strong> {{ user_obj.date_joined|date:"M d, Y" }}</p>
+                <p><strong>Last Login:</strong>
+                    {% if user_obj.last_login %}
+                        {{ user_obj.last_login|date:"M d, Y H:i" }}
+                    {% else %}
+                        <span class="text-muted">Never</span>
+                    {% endif %}
+                </p>
+                <p><strong>Current Role:</strong> {{ user_obj.get_role_display }}</p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-shield-alt"></i> Role Permissions</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Module</th>
+                                <th>Access</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Dashboard</td>
+                                <td>
+                                    {% if user_obj.is_superuser %}
+                                        <i class="fas fa-check text-success"></i> Full
+                                    {% else %}
+                                        <i class="fas fa-check text-success"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Programs</td>
+                                <td>
+                                    {% if user_obj.is_superuser or user_obj.role in 'ict_admin,me_staff,county_executive,county_assembly,field_associate' %}
+                                        {% if user_obj.is_superuser or user_obj.role in 'ict_admin,me_staff' %}
+                                            <i class="fas fa-check text-success"></i> Full
+                                        {% else %}
+                                            <i class="fas fa-eye text-info"></i> Read
+                                        {% endif %}
+                                    {% else %}
+                                        <i class="fas fa-times text-danger"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Households</td>
+                                <td>
+                                    {% if user_obj.is_superuser or user_obj.role in 'ict_admin,me_staff,field_associate,mentor' %}
+                                        <i class="fas fa-check text-success"></i> Full
+                                    {% else %}
+                                        <i class="fas fa-times text-danger"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Business Groups</td>
+                                <td>
+                                    {% if user_obj.is_superuser or user_obj.role in 'ict_admin,me_staff,field_associate,mentor' %}
+                                        <i class="fas fa-check text-success"></i> Full
+                                    {% else %}
+                                        <i class="fas fa-times text-danger"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Settings</td>
+                                <td>
+                                    {% if user_obj.is_superuser or user_obj.role in 'ict_admin,me_staff' %}
+                                        <i class="fas fa-check text-success"></i> Full
+                                    {% else %}
+                                        <i class="fas fa-times text-danger"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

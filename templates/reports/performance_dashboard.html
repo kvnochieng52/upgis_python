@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-line"></i> {{ page_title }}</h1>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'reports:report_list' %}">Reports</a></li>
+            <li class="breadcrumb-item active">Performance Dashboard</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Key Metrics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card stat-card-blue">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ total_households }}</h3>
+                    <p class="mb-0">Total Households</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-home fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-green">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ active_programs }}</h3>
+                    <p class="mb-0">Active Programs</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-play-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-orange">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ graduated_programs }}</h3>
+                    <p class="mb-0">Graduated</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-graduation-cap fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-purple">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ graduation_rate|floatformat:1 }}%</h3>
+                    <p class="mb-0">Graduation Rate</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-percentage fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Program Performance -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Program Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Program</th>
+                                <th>Enrolled</th>
+                                <th>Active</th>
+                                <th>Graduated</th>
+                                <th>Completion Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in program_stats %}
+                            <tr>
+                                <td><strong>{{ stat.name }}</strong></td>
+                                <td>{{ stat.enrolled }}</td>
+                                <td>{{ stat.active }}</td>
+                                <td>{{ stat.graduated }}</td>
+                                <td>
+                                    <span class="badge bg-{% if stat.completion_rate >= 80 %}success{% elif stat.completion_rate >= 50 %}warning{% else %}danger{% endif %}">
+                                        {{ stat.completion_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No programs found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-users"></i> Group Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <span>Business Groups:</span>
+                    <strong>{{ total_business_groups }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>Savings Groups:</span>
+                    <strong>{{ total_savings_groups }}</strong>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span>Total Groups:</span>
+                    <strong>{{ total_business_groups|add:total_savings_groups }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Geographic Distribution -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-map-marker-alt"></i> Top Villages by Program Activity</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Village</th>
+                        <th>Subcounty</th>
+                        <th>Households</th>
+                        <th>Active Programs</th>
+                        <th>Activity Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in geographic_stats %}
+                    <tr>
+                        <td><strong>{{ stat.village }}</strong></td>
+                        <td>{{ stat.subcounty }}</td>
+                        <td>{{ stat.households }}</td>
+                        <td>{{ stat.active_programs }}</td>
+                        <td>
+                            {% widthratio stat.active_programs stat.households 100 as activity_rate %}
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-{% if activity_rate >= 80 %}success{% elif activity_rate >= 50 %}warning{% else %}danger{% endif %}"
+                                     role="progressbar" style="width: {{ activity_rate }}%">
+                                    {{ activity_rate }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No village data found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

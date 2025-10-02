@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-edit"></i> {{ page_title }}</h1>
+    <a href="{% url 'surveys:business_survey_detail' survey.pk %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Survey
+    </a>
+</div>
+
+<!-- Admin Notice -->
+<div class="alert alert-info mb-4">
+    <i class="fas fa-shield-alt me-2"></i>
+    <strong>Authorized Access:</strong> You are editing a business survey. This function is restricted to M&E staff and system administrators for data integrity and quality control.
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-list"></i> Edit Business Survey</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Business Group</label>
+                        <input type="text" class="form-control" value="{{ survey.business_group.name }}" readonly>
+                        <div class="form-text">Business group cannot be changed after survey creation</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Survey Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="6" placeholder="Enter progress observations, business performance notes, challenges, achievements, and recommendations...">{{ survey.notes }}</textarea>
+                        <div class="form-text">Record business group progress, challenges, financial status, and any support needed.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'surveys:business_survey_detail' survey.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Update Survey
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Survey Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Business Group:</strong> {{ survey.business_group.name }}</p>
+                <p><strong>Survey Date:</strong> {{ survey.survey_date|date:"M d, Y" }}</p>
+                <p><strong>Surveyor:</strong> {{ survey.surveyor }}</p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Business Survey Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li><i class="fas fa-check text-success me-2"></i>Record progress since last visit</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Note financial performance</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Document challenges and support needs</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Track group dynamics and participation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

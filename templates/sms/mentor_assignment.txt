@@ -1,0 +1,1 @@
+Hello {{ household.head_name }}! You have been assigned mentor {{ mentor.get_full_name }} for the UPG program. Contact: {{ mentor.phone_number }}. Welcome!

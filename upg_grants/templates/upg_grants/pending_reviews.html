@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-clipboard-check"></i> {{ page_title }}</h1>
+    <span class="badge bg-primary fs-5">{{ applications.count }} Pending</span>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-list"></i> Applications Awaiting Review</h5>
+    </div>
+    <div class="card-body">
+        {% if applications %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th>Household</th>
+                        <th>Grant Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr>
+                        <td>
+                            <strong>{{ app.title }}</strong><br>
+                            <small class="text-muted">{{ app.program.name }}</small>
+                        </td>
+                        <td>
+                            {{ app.household.name }}<br>
+                            <small class="text-muted">{{ app.household.village.name }}</small>
+                        </td>
+                        <td><span class="badge bg-info">{{ app.get_grant_type_display }}</span></td>
+                        <td>KES {{ app.requested_amount|floatformat:2 }}</td>
+                        <td>
+                            {% if app.status == 'submitted' %}
+                            <span class="badge bg-warning">{{ app.get_status_display }}</span>
+                            {% elif app.status == 'under_review' %}
+                            <span class="badge bg-primary">{{ app.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ app.submission_date|date:"M d, Y" }}<br>
+                            <small class="text-muted">by {{ app.submitted_by.get_full_name }}</small>
+                        </td>
+                        <td>
+                            <a href="{% url 'upg_grants:application_detail' app.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{% url 'upg_grants:application_review' app.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-check"></i> Review
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox text-muted" style="font-size: 4rem;"></i>
+            <p class="text-muted mt-3">No pending applications</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

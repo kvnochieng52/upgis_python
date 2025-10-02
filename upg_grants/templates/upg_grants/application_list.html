@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-file-invoice-dollar"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'grants:grants_dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Grants Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h6><i class="fas fa-filter"></i> Filter Applications</h6>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Statuses</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="grant_type" class="form-label">Grant Type</label>
+                <select class="form-select" id="grant_type" name="grant_type">
+                    <option value="">All Types</option>
+                    {% for value, label in grant_type_choices %}
+                    <option value="{{ value }}" {% if grant_type_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Apply Filters
+                </button>
+                <a href="{% url 'upg_grants:application_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Applications List -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5><i class="fas fa-list"></i> Grant Applications ({{ applications|length }})</h5>
+        <div>
+            {% if status_filter %}
+            <span class="badge bg-info">Status: {{ status_filter }}</span>
+            {% endif %}
+            {% if grant_type_filter %}
+            <span class="badge bg-info">Type: {{ grant_type_filter }}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        {% if applications %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th>Household</th>
+                        <th>Grant Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in applications %}
+                    <tr>
+                        <td>
+                            {% if app.grant_category == 'household' %}
+                            <strong>{{ app.title }}</strong><br>
+                            <small class="text-muted">{% if app.program %}{{ app.program.name }}{% else %}Non-program grant{% endif %}</small>
+                            {% elif app.grant_category == 'sb' %}
+                            <strong>SB Grant - {{ app.business_group.name }}</strong><br>
+                            <small class="text-muted">{{ app.business_group.business_type }}</small>
+                            {% elif app.grant_category == 'pr' %}
+                            <strong>PR Grant - {{ app.business_group.name }}</strong><br>
+                            <small class="text-muted">Based on SB Grant #{{ app.sb_grant.id }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if app.grant_category == 'household' %}
+                            {{ app.household.name }}<br>
+                            <small class="text-muted">{{ app.household.village.name }}</small>
+                            {% else %}
+                            {{ app.business_group.name }}<br>
+                            <small class="text-muted">Business Group</small>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-info">{{ app.display_type }}</span></td>
+                        <td>
+                            {% if app.grant_category == 'household' %}
+                            KES {{ app.requested_amount|floatformat:0 }}
+                            {% elif app.grant_category == 'sb' %}
+                            KES {{ app.final_grant_amount|default:app.calculated_grant_amount|floatformat:0 }}
+                            {% elif app.grant_category == 'pr' %}
+                            KES {{ app.grant_amount|floatformat:0 }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if app.status == 'draft' or app.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">{{ app.get_status_display }}</span>
+                            {% elif app.status == 'submitted' %}
+                            <span class="badge bg-warning text-dark">{{ app.get_status_display }}</span>
+                            {% elif app.status == 'under_review' %}
+                            <span class="badge bg-primary">{{ app.get_status_display }}</span>
+                            {% elif app.status == 'approved' %}
+                            <span class="badge bg-success">{{ app.get_status_display }}</span>
+                            {% elif app.status == 'rejected' %}
+                            <span class="badge bg-danger">{{ app.get_status_display }}</span>
+                            {% elif app.status == 'disbursed' or app.status == 'funded' %}
+                            <span class="badge bg-success">{{ app.get_status_display }}</span>
+                            {% elif app.status == 'cancelled' %}
+                            <span class="badge bg-dark">{{ app.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if app.grant_category == 'household' %}
+                            {{ app.submission_date|date:"M d, Y" }}<br>
+                            <small class="text-muted">by {{ app.submitted_by.get_full_name|default:"N/A" }}</small>
+                            {% else %}
+                            {{ app.created_at|date:"M d, Y" }}<br>
+                            <small class="text-muted">Business Grant</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                {% if app.grant_category == 'household' %}
+                                <a href="{% url 'upg_grants:application_detail' app.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% if can_review and app.status in 'submitted,under_review' %}
+                                <a href="{% url 'upg_grants:application_review' app.id %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-clipboard-check"></i> Review
+                                </a>
+                                {% endif %}
+                                {% elif app.grant_category == 'sb' %}
+                                <a href="{% url 'grants:grant_detail' 'sb' app.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% elif app.grant_category == 'pr' %}
+                                <a href="{% url 'grants:grant_detail' 'pr' app.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox text-muted" style="font-size: 4rem;"></i>
+            <p class="text-muted mt-3">No grant applications found</p>
+            {% if status_filter or grant_type_filter %}
+            <a href="{% url 'upg_grants:application_list' %}" class="btn btn-primary">Clear Filters</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

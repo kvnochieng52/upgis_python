@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    <div class="text-muted">
+        Welcome, {{ user.get_full_name|default:user.username }} ({{ user.get_role_display }})
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stat-card stat-card-blue">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ stats.total_households }}</h3>
+                    <p class="mb-0">Total Households</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-home fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-green">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ stats.active_households }}</h3>
+                    <p class="mb-0">Active Participants</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-user-check fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-orange">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ stats.graduated_households }}</h3>
+                    <p class="mb-0">Graduated</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-graduation-cap fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ stats.total_business_groups }}</h3>
+                    <p class="mb-0">Business Groups</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Statistics for specific roles -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Savings Groups</h5>
+                <h3 class="text-primary">{{ stats.total_savings_groups }}</h3>
+                <small class="text-muted">Active BSGs</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">SB Grants</h5>
+                <h3 class="text-success">{{ stats.sb_grants_funded }}</h3>
+                <small class="text-muted">Funded</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">PR Grants</h5>
+                <h3 class="text-warning">{{ stats.pr_grants_funded }}</h3>
+                <small class="text-muted">Funded</small>
+            </div>
+        </div>
+    </div>
+
+    {% if user.role == 'mentor' and stats.assigned_villages %}
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">My Villages</h5>
+                <h3 class="text-info">{{ stats.assigned_villages }}</h3>
+                <small class="text-muted">Assigned to me</small>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'households:household_list' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-home"></i> Manage Households
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'business_groups:group_list' %}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-users"></i> Business Groups
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'surveys:survey_list' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-clipboard-list"></i> Surveys
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'reports:report_list' %}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'households:graduation_dashboard' %}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-graduation-cap"></i> Graduation Tracking
+                        </a>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-handshake"></i> Mentoring
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Wireframe-Specific Dashboard Components -->
+<div class="row mt-4">
+    <!-- Program Overview -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h6><i class="fas fa-project-diagram"></i> Program Overview</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Total Households Enrolled:</strong><br>{{ program_overview.total_households_enrolled }}</p>
+                <p><strong>Active Business Groups:</strong><br>{{ program_overview.active_business_groups }}</p>
+                <p><strong>Graduation Rate:</strong><br>{{ program_overview.graduation_rate }}%</p>
+                <p class="mb-0"><strong>Program Completion:</strong><br>{{ program_overview.program_completion_status }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geographic Coverage -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h6><i class="fas fa-map-marked-alt"></i> Geographic Coverage</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Villages by County:</strong><br>{{ geographic_coverage.villages_by_county }}</p>
+                <p><strong>Household Distribution:</strong><br>{{ geographic_coverage.household_distribution }}</p>
+                <p><strong>Mentor Coverage:</strong><br>{{ geographic_coverage.mentor_coverage_map }}</p>
+                <p class="mb-0"><strong>Saturation Levels:</strong><br>{{ geographic_coverage.saturation_levels }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Metrics -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-money-bill-wave"></i> Financial Metrics</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Grants Disbursed:</strong><br>KES {{ financial_metrics.grants_disbursed|floatformat:0 }}</p>
+                <p><strong>Business Progress:</strong><br>{{ financial_metrics.business_progress }} groups</p>
+                <p><strong>Savings Accumulated:</strong><br>KES {{ financial_metrics.savings_accumulated|floatformat:0 }}</p>
+                <p class="mb-0"><strong>Income Generation:</strong><br>{{ financial_metrics.income_generation }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Progress -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-chalkboard-teacher"></i> Training Progress</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Modules Completed:</strong><br>{{ training_progress.modules_completed }} modules</p>
+                <p><strong>Attendance Rates:</strong><br>{{ training_progress.attendance_rates }}</p>
+                <p><strong>Skill Development:</strong><br>{{ training_progress.skill_development }}</p>
+                <p class="mb-0"><strong>Mentoring Sessions:</strong><br>{{ training_progress.mentoring_sessions }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- UPG 12-Month Process Workflow -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-route"></i> UPG 12-Month Graduation Model Process</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md">
+                        <div class="bg-primary text-white rounded p-3 mb-2">
+                            <i class="fas fa-crosshairs fa-2x mb-2"></i>
+                            <h6>1. Targeting</h6>
+                            <small>ESR List, PPI Scoring</small>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-arrow-right text-primary fa-2x"></i>
+                    </div>
+                    <div class="col-md">
+                        <div class="bg-success text-white rounded p-3 mb-2">
+                            <i class="fas fa-clipboard-check fa-2x mb-2"></i>
+                            <h6>2. Eligibility</h6>
+                            <small>Household Assessment</small>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-arrow-right text-success fa-2x"></i>
+                    </div>
+                    <div class="col-md">
+                        <div class="bg-warning text-dark rounded p-3 mb-2">
+                            <i class="fas fa-chalkboard-teacher fa-2x mb-2"></i>
+                            <h6>3. Training</h6>
+                            <small>Business & Financial Skills</small>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-arrow-right text-warning fa-2x"></i>
+                    </div>
+                    <div class="col-md">
+                        <div class="bg-info text-white rounded p-3 mb-2">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <h6>4. Group Formation</h6>
+                            <small>Business & Savings Groups</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="row text-center mt-3">
+                    <div class="col-md">
+                        <div class="bg-secondary text-white rounded p-3 mb-2">
+                            <i class="fas fa-money-bill-wave fa-2x mb-2"></i>
+                            <h6>5. Grant Disbursement</h6>
+                            <small>SB & PR Grants</small>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-arrow-right text-secondary fa-2x"></i>
+                    </div>
+                    <div class="col-md">
+                        <div class="bg-dark text-white rounded p-3 mb-2">
+                            <i class="fas fa-handshake fa-2x mb-2"></i>
+                            <h6>6. Mentoring</h6>
+                            <small>Ongoing Support</small>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-arrow-right text-dark fa-2x"></i>
+                    </div>
+                    <div class="col-md">
+                        <div class="bg-danger text-white rounded p-3 mb-2">
+                            <i class="fas fa-graduation-cap fa-2x mb-2"></i>
+                            <h6>7. Graduation</h6>
+                            <small>Poverty Exit</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports & Analytics - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-bar"></i> {{ page_title }}</h1>
+    <a href="{% url 'reports:custom_report_builder' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Generate Report
+    </a>
+</div>
+
+<!-- Key Metrics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card stat-card-blue">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ reports_data.total_households }}</h3>
+                    <p class="mb-0">Total Households</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-home fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-green">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ reports_data.active_programs }}</h3>
+                    <p class="mb-0">Active Programs</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-play-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-orange">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ reports_data.graduated_programs }}</h3>
+                    <p class="mb-0">Graduated</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-graduation-cap fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ reports_data.total_business_groups }}</h3>
+                    <p class="mb-0">Business Groups</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Categories -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-home"></i> Household Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'reports:download_household_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Household Registration Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">Complete list of registered households with demographics</p>
+                    </a>
+                    <a href="{% url 'reports:download_ppi_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">PPI Assessment Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">Poverty Probability Index scores and classifications</p>
+                    </a>
+                    <a href="{% url 'reports:download_program_participation_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Program Participation Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">Household participation in UPG programs</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-users"></i> Business & Groups Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'reports:download_business_groups_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Business Groups Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">Formation, membership, and progress of business groups</p>
+                    </a>
+                    <a href="{% url 'reports:download_savings_groups_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Savings Groups Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">BSG savings, loans, and financial activities</p>
+                    </a>
+                    <a href="{% url 'reports:download_grants_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Grant Disbursement Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">SB and PR grant allocations and utilization</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chalkboard-teacher"></i> Training & Mentoring Reports</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'reports:download_training_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Training Attendance Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">Training session attendance and completion rates</p>
+                    </a>
+                    <a href="{% url 'reports:download_mentoring_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Mentoring Activities Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">Mentor visits, support, and progress tracking</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Analytics & Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'reports:performance_dashboard' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Program Performance Dashboard</h6>
+                            <small><i class="fas fa-eye"></i></small>
+                        </div>
+                        <p class="mb-1">Key performance indicators and program outcomes</p>
+                    </a>
+                    <a href="{% url 'reports:download_geographic_report' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Geographic Analysis Report</h6>
+                            <small><i class="fas fa-download"></i></small>
+                        </div>
+                        <p class="mb-1">Program distribution by villages and subcounties</p>
+                    </a>
+                    <a href="{% url 'reports:custom_report_builder' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">Custom Report Builder</h6>
+                            <small><i class="fas fa-cogs"></i></small>
+                        </div>
+                        <p class="mb-1">Create custom reports with selected parameters</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Export Actions -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-bolt"></i> Quick Export</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'reports:download_household_report' %}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-file-excel"></i> Export Households (CSV)
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'reports:download_business_groups_report' %}" class="btn btn-outline-success w-100">
+                    <i class="fas fa-file-csv"></i> Export Business Groups
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'reports:download_grants_report' %}" class="btn btn-outline-danger w-100">
+                    <i class="fas fa-file-pdf"></i> Export Grants
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="#" class="btn btn-outline-info w-100" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

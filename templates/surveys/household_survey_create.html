@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-home"></i> {{ page_title }}</h1>
+    <a href="{% url 'surveys:survey_list' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Surveys
+    </a>
+</div>
+
+<!-- Admin Notice -->
+<div class="alert alert-info mb-4">
+    <i class="fas fa-shield-alt me-2"></i>
+    <strong>Authorized Access:</strong> You are creating a household survey. This function is restricted to M&E staff and system administrators for data integrity and quality control.
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-list"></i> Household Survey Form</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="household" class="form-label">Select Household <span class="text-danger">*</span></label>
+                        <select class="form-select" id="household" name="household" required>
+                            <option value="">Choose household...</option>
+                            {% for household in households %}
+                            <option value="{{ household.id }}">{{ household.household_head }} - {{ household.village.name|default:"No village" }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="survey_type" class="form-label">Survey Type</label>
+                        <select class="form-select" id="survey_type" name="survey_type">
+                            <option value="General">General Assessment</option>
+                            <option value="PPI">PPI Assessment</option>
+                            <option value="Baseline">Baseline Survey</option>
+                            <option value="Follow-up">Follow-up Survey</option>
+                            <option value="Exit">Exit Survey</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Survey Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="Enter survey observations, findings, or additional notes..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'surveys:survey_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Create Survey
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Survey Guidelines</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li><i class="fas fa-check text-success me-2"></i>Select the household to survey</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Choose appropriate survey type</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Record detailed observations</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Follow-up surveys track progress</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

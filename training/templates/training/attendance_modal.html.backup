@@ -1,0 +1,202 @@
+<div class="row mb-3">
+    <div class="col-12">
+        <h6 class="text-muted">Training: {{ training.name }}</h6>
+        <p class="mb-2">
+            <span class="badge bg-secondary">{{ training.module_id }}</span>
+            <span class="badge bg-info">{{ training.enrolled_households_count }} enrolled</span>
+            {% if training.bm_cycle %}
+            <span class="badge bg-primary">{{ training.bm_cycle.bm_cycle_name }}</span>
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+{% if attendances %}
+<div class="row">
+    <div class="col-12">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Household</th>
+                        <th>Village</th>
+                        <th>Training Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in attendances %}
+                    <tr>
+                        <td>
+                            <strong>{{ attendance.household.name }}</strong>
+                            {% if attendance.household.national_id %}
+                            <br><small class="text-muted">ID: {{ attendance.household.national_id }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ attendance.household.village.name }}</td>
+                        <td>{{ attendance.training_date }}</td>
+                        <td>
+                            {% if attendance.attendance %}
+                            <span class="badge bg-success">Present</span>
+                            {% else %}
+                            <span class="badge bg-danger">Absent</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                {% if attendance.attendance %}
+                                <button class="btn btn-outline-warning btn-sm"
+                                        onclick="markAbsent({{ attendance.id }})"
+                                        title="Mark Absent">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% else %}
+                                <button class="btn btn-outline-success btn-sm"
+                                        onclick="markPresent({{ attendance.id }})"
+                                        title="Mark Present">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-outline-danger btn-sm"
+                                        onclick="removeAttendance({{ attendance.id }})"
+                                        title="Remove from Training">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <span class="text-muted">
+                    Total: {{ attendances.count }} |
+                    Present: <span class="text-success">{{ attendances|length }}</span> |
+                    Absent: <span class="text-danger">0</span>
+                </span>
+            </div>
+            <div>
+                <button class="btn btn-primary btn-sm" onclick="addHousehold()">
+                    <i class="fas fa-plus"></i> Add Household
+                </button>
+                <button class="btn btn-success btn-sm" onclick="markAllPresent()">
+                    <i class="fas fa-check-double"></i> Mark All Present
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <i class="fas fa-users fa-2x mb-2"></i>
+            <h5>No Attendance Records</h5>
+            <p>This training doesn't have any attendance records yet.</p>
+            <button class="btn btn-primary" onclick="addHousehold()">
+                <i class="fas fa-plus"></i> Add First Household
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function markPresent(attendanceId) {
+    updateAttendance(attendanceId, true);
+}
+
+function markAbsent(attendanceId) {
+    updateAttendance(attendanceId, false);
+}
+
+function updateAttendance(attendanceId, isPresent) {
+    fetch(`/training/attendance/${attendanceId}/update/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            attendance: isPresent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload the attendance modal content
+            manageAttendance({{ training.id }});
+        } else {
+            alert(data.message || 'Error updating attendance');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating attendance:', error);
+        alert('Error updating attendance. Please try again.');
+    });
+}
+
+function removeAttendance(attendanceId) {
+    if (confirm('Are you sure you want to remove this household from the training?')) {
+        fetch(`/training/attendance/${attendanceId}/remove/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload the attendance modal content
+                manageAttendance({{ training.id }});
+            } else {
+                alert(data.message || 'Error removing attendance');
+            }
+        })
+        .catch(error => {
+            console.error('Error removing attendance:', error);
+            alert('Error removing attendance. Please try again.');
+        });
+    }
+}
+
+function addHousehold() {
+    // This would open a separate modal or interface to add households
+    alert('Add Household functionality would be implemented here');
+}
+
+function markAllPresent() {
+    if (confirm('Mark all households as present for this training?')) {
+        fetch(`/training/{{ training.id }}/attendance/mark-all-present/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload the attendance modal content
+                manageAttendance({{ training.id }});
+            } else {
+                alert(data.message || 'Error marking all present');
+            }
+        })
+        .catch(error => {
+            console.error('Error marking all present:', error);
+            alert('Error marking all present. Please try again.');
+        });
+    }
+}
+</script>

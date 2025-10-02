@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-edit"></i> {{ page_title }}</h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'training:training_details' training.id %}" class="btn btn-secondary">
+            <i class="fas fa-eye"></i> View Details
+        </a>
+        <a href="{% url 'training:training_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Trainings
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <form method="post" id="edit-training-form">
+            {% csrf_token %}
+
+            <!-- Basic Information Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle text-primary me-2"></i>Basic Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Training Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name"
+                                   value="{{ training.name }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="module_id" class="form-label">Module ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="module_id" name="module_id"
+                                   value="{{ training.module_id }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="module_number" class="form-label">Module Number</label>
+                            <input type="number" class="form-control" id="module_number" name="module_number"
+                                   value="{{ training.module_number|default:'' }}" min="1" placeholder="e.g., 1, 2, 3...">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="planned" {% if training.status == 'planned' %}selected{% endif %}>📅 Planned</option>
+                                <option value="active" {% if training.status == 'active' %}selected{% endif %}>🟢 Active</option>
+                                <option value="completed" {% if training.status == 'completed' %}selected{% endif %}>✅ Completed</option>
+                                <option value="cancelled" {% if training.status == 'cancelled' %}selected{% endif %}>❌ Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training Details Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-calendar-alt text-success me-2"></i>Training Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date"
+                                   value="{{ training.start_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="duration_hours" class="form-label">Duration (Hours)</label>
+                            <input type="number" class="form-control" id="duration_hours" name="duration_hours"
+                                   value="{{ training.duration_hours|default:'' }}" step="0.5" min="0" placeholder="e.g., 2.5">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="location" class="form-label">Location/Venue</label>
+                            <input type="text" class="form-control" id="location" name="location"
+                                   value="{{ training.location|default:'' }}" placeholder="e.g., Community Center">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="max_households" class="form-label">Max Households</label>
+                            <input type="number" class="form-control" id="max_households" name="max_households"
+                                   value="{{ training.max_households }}" min="1" max="50">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="participant_count" class="form-label">Actual Participants</label>
+                            <input type="number" class="form-control" id="participant_count" name="participant_count"
+                                   value="{{ training.participant_count|default:'' }}" min="0" placeholder="Actual count">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="time_taken" class="form-label">Session Duration</label>
+                            <input type="text" class="form-control" id="time_taken" name="time_taken"
+                                   value="{% if training.time_taken %}{{ training.time_taken }}{% endif %}"
+                                   placeholder="HH:MM:SS (e.g., 02:30:00)">
+                            <div class="form-text">Format: Hours:Minutes:Seconds</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assignments Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-users text-warning me-2"></i>Assignments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="bm_cycle" class="form-label">BM Cycle</label>
+                            <select class="form-select" id="bm_cycle" name="bm_cycle">
+                                <option value="">Select BM Cycle...</option>
+                                {% for cycle in bm_cycles %}
+                                <option value="{{ cycle.id }}" {% if training.bm_cycle_id == cycle.id %}selected{% endif %}>
+                                    {{ cycle.bm_cycle_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="assigned_mentor" class="form-label">Assigned Mentor</label>
+                            <select class="form-select" id="assigned_mentor" name="assigned_mentor">
+                                <option value="">Select Mentor...</option>
+                                {% for mentor in mentors %}
+                                <option value="{{ mentor.id }}" {% if training.assigned_mentor_id == mentor.id %}selected{% endif %}>
+                                    {{ mentor.get_full_name }} ({{ mentor.username }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5><i class="fas fa-sticky-note text-info me-2"></i>Additional Notes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Training Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4"
+                                  placeholder="Add any additional notes or comments about this training session...">{{ training.notes|default:'' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end gap-2 mb-4">
+                <a href="{% url 'training:training_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Current Information Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Current Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Training:</strong> {{ training.name }}</p>
+                <p><strong>Module:</strong> {{ training.module_id }}</p>
+                <p><strong>Status:</strong>
+                    <span class="badge bg-{% if training.status == 'completed' %}success{% elif training.status == 'active' %}primary{% elif training.status == 'planned' %}warning{% else %}danger{% endif %}">
+                        {{ training.get_status_display }}
+                    </span>
+                </p>
+                <p><strong>Start Date:</strong> {{ training.start_date|date:"M d, Y"|default:"Not set" }}</p>
+                <p><strong>Location:</strong> {{ training.location|default:"Not set" }}</p>
+                <p><strong>Max Households:</strong> {{ training.max_households }}</p>
+                {% if training.assigned_mentor %}
+                <p><strong>Mentor:</strong> {{ training.assigned_mentor.get_full_name }}</p>
+                {% endif %}
+                <p><strong>Created:</strong> {{ training.created_at|date:"M d, Y H:i" }}</p>
+                {% if training.updated_at %}
+                <p><strong>Last Updated:</strong> {{ training.updated_at|date:"M d, Y H:i" }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'training:manage_attendance' training.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-users"></i> Manage Attendance
+                    </a>
+                    {% if training.status == 'planned' %}
+                    <a href="{% url 'training:start_training' training.id %}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-play"></i> Start Training
+                    </a>
+                    {% endif %}
+                    {% if training.status == 'active' %}
+                    <a href="{% url 'training:complete_training' training.id %}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-check"></i> Complete Training
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'training:delete_training' training.id %}" class="btn btn-outline-danger btn-sm"
+                       onclick="return confirm('Are you sure you want to delete this training?')">
+                        <i class="fas fa-trash"></i> Delete Training
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Stats Card -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Training Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Enrolled Households:</span>
+                    <strong>{{ training.attendances.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Present Today:</span>
+                    <strong>{{ present_count|default:0 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Completion Rate:</span>
+                    <strong>{{ completion_rate|default:0 }}%</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Form submission handling
+    $('#edit-training-form').on('submit', function(e) {
+        e.preventDefault();
+
+        const formData = $(this).serialize();
+        const submitBtn = $(this).find('button[type="submit"]');
+
+        // Disable submit button
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
+        $.ajax({
+            url: window.location.href,
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    // Show success message
+                    const alertHtml = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>Training updated successfully!
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    $('main').prepend(alertHtml);
+
+                    // Scroll to top
+                    window.scrollTo(0, 0);
+                } else {
+                    // Show error message
+                    const alertHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Error updating training: ${response.message || 'Unknown error'}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    $('main').prepend(alertHtml);
+                    window.scrollTo(0, 0);
+                }
+            },
+            error: function(xhr, status, error) {
+                // Show error message
+                const alertHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error updating training. Please try again.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                $('main').prepend(alertHtml);
+                window.scrollTo(0, 0);
+            },
+            complete: function() {
+                // Re-enable submit button
+                submitBtn.prop('disabled', false).html('<i class="fas fa-save"></i> Save Changes');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

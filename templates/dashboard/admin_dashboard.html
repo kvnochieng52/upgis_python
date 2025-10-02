@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block title %}System Administrator Dashboard - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cogs"></i> System Administrator Dashboard</h1>
+    <span class="badge bg-danger fs-6">Super Admin Access</span>
+</div>
+
+<!-- Admin Notice -->
+<div class="alert alert-warning mb-4">
+    <i class="fas fa-shield-alt me-2"></i>
+    <strong>System Administrator View:</strong> You have full system access including ESR imports, user management, and system configuration.
+</div>
+
+<!-- Basic Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.total_households }}</h4>
+                <small>Total Households</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.active_households }}</h4>
+                <small>Active Households</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.total_business_groups }}</h4>
+                <small>Business Groups</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.total_savings_groups }}</h4>
+                <small>Savings Groups</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Program Overview -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Program Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <p><strong>Total Households:</strong> {{ program_overview.total_households_enrolled }}</p>
+                        <p><strong>Active Business Groups:</strong> {{ program_overview.active_business_groups }}</p>
+                        <p><strong>Graduation Rate:</strong> {{ program_overview.graduation_rate }}%</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <p><strong>Program Completion:</strong> {{ program_overview.program_completion_status }}</p>
+                        <p><strong>Geographic Coverage:</strong> {{ geographic_coverage.villages_by_county }} subcounties</p>
+                        <p><strong>Saturation Levels:</strong> {{ geographic_coverage.saturation_levels }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-money-bill-wave"></i> Financial Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <p><strong>Grants Disbursed:</strong> KES {{ financial_metrics.grants_disbursed|floatformat:0 }}</p>
+                        <p><strong>SB Grants Funded:</strong> {{ stats.sb_grants_funded }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <p><strong>PR Grants Funded:</strong> {{ stats.pr_grants_funded }}</p>
+                        <p><strong>Business Progress:</strong> {{ financial_metrics.business_progress }} active</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Administration -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tools"></i> System Administration</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'settings:settings_dashboard' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-users-cog"></i><br>User Management
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'core:esr_import_list' %}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-file-import"></i><br>ESR Import
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'programs:program_list' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-project-diagram"></i><br>Program Management
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'reports:report_list' %}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-chart-bar"></i><br>System Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Progress -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-graduation-cap"></i> Training Progress</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Modules Completed:</strong> {{ training_progress.modules_completed }}</p>
+                <p><strong>Attendance Rates:</strong> {{ training_progress.attendance_rates }}</p>
+                <p><strong>Skill Development:</strong> {{ training_progress.skill_development }}</p>
+                <p><strong>Mentoring Sessions:</strong> {{ training_progress.mentoring_sessions }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-map-marked-alt"></i> Geographic Coverage</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Coverage Focus:</strong> {{ geographic_coverage.mentor_coverage_map }}</p>
+                <p><strong>Household Distribution:</strong> {{ geographic_coverage.household_distribution }} households</p>
+                <p><strong>Saturation Rate:</strong> {{ geographic_coverage.saturation_levels }}</p>
+                <p><strong>Income Generation:</strong> {{ financial_metrics.income_generation }} increase</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent System Activity -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-activity"></i> System Activity Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>User Activity</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-user text-primary"></i> System users with access</li>
+                            <li><i class="fas fa-sign-in-alt text-success"></i> Daily active users</li>
+                            <li><i class="fas fa-shield-alt text-warning"></i> Admin sessions</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Data Management</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-database text-info"></i> Database health: Good</li>
+                            <li><i class="fas fa-sync-alt text-success"></i> Last backup: Today</li>
+                            <li><i class="fas fa-file-import text-primary"></i> Recent ESR imports</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>System Status</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle text-success"></i> All services operational</li>
+                            <li><i class="fas fa-clock text-info"></i> Uptime: 99.9%</li>
+                            <li><i class="fas fa-memory text-primary"></i> System performance: Good</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-file-alt"></i> {{ page_title }}</h1>
+    <div>
+        {% if can_review %}
+        <a href="{% url 'upg_grants:application_review' application.id %}" class="btn btn-primary">
+            <i class="fas fa-clipboard-check"></i> Review Application
+        </a>
+        {% endif %}
+        <a href="{% url 'upg_grants:application_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-file-invoice-dollar"></i> {{ application.title }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Grant Type:</strong> <span class="badge bg-info">{{ application.get_grant_type_display }}</span></p>
+                        <p><strong>Requested Amount:</strong> <span class="text-success fw-bold fs-5">KES {{ application.requested_amount|floatformat:2 }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong>
+                            {% if application.status == 'draft' %}
+                            <span class="badge bg-secondary">{{ application.get_status_display }}</span>
+                            {% elif application.status == 'submitted' %}
+                            <span class="badge bg-warning">{{ application.get_status_display }}</span>
+                            {% elif application.status == 'under_review' %}
+                            <span class="badge bg-primary">{{ application.get_status_display }}</span>
+                            {% elif application.status == 'approved' %}
+                            <span class="badge bg-success">{{ application.get_status_display }}</span>
+                            {% elif application.status == 'rejected' %}
+                            <span class="badge bg-danger">{{ application.get_status_display }}</span>
+                            {% elif application.status == 'disbursed' %}
+                            <span class="badge bg-success">{{ application.get_status_display }}</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Program:</strong> {% if application.program %}{{ application.program.name }}{% else %}<em class="text-muted">Not program-specific</em>{% endif %}</p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6 class="fw-bold">Purpose and Justification</h6>
+                <p>{{ application.purpose }}</p>
+
+                {% if application.business_plan %}
+                <h6 class="fw-bold mt-3">Business Plan</h6>
+                <p>{{ application.business_plan }}</p>
+                {% endif %}
+
+                <h6 class="fw-bold mt-3">Expected Outcomes</h6>
+                <p>{{ application.expected_outcomes }}</p>
+
+                {% if application.budget_breakdown %}
+                <h6 class="fw-bold mt-3">Budget Breakdown</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th class="text-end">Amount (KES)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item, amount in application.budget_breakdown.items %}
+                            <tr>
+                                <td>{{ item }}</td>
+                                <td class="text-end">{{ amount|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th>Total</th>
+                                <th class="text-end">{{ application.requested_amount|floatformat:2 }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if application.review_notes %}
+                <hr>
+                <h6 class="fw-bold">Review Notes</h6>
+                <p>{{ application.review_notes }}</p>
+                {% if application.review_score %}
+                <p><strong>Review Score:</strong> {{ application.review_score }}/100</p>
+                {% endif %}
+                {% endif %}
+
+                {% if application.approval_notes %}
+                <hr>
+                <h6 class="fw-bold">Approval/Rejection Notes</h6>
+                <p>{{ application.approval_notes }}</p>
+                {% if application.approved_amount %}
+                <p><strong>Approved Amount:</strong> <span class="text-success fw-bold">KES {{ application.approved_amount|floatformat:2 }}</span></p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Household Info -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-home"></i> Household</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Name:</strong> {{ application.household.name }}</p>
+                <p><strong>Village:</strong> {{ application.household.village.name }}</p>
+                <p><strong>Phone:</strong> {{ application.household.phone_number }}</p>
+                <a href="{% url 'households:household_detail' application.household.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="fas fa-eye"></i> View Household
+                </a>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-history"></i> Application Timeline</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-circle text-primary"></i>
+                        <strong>Submitted:</strong> {{ application.submission_date|date:"M d, Y H:i" }}<br>
+                        <small class="text-muted ms-3">by {{ application.submitted_by.get_full_name }}</small>
+                    </li>
+
+                    {% if application.reviewed_by %}
+                    <li class="mb-2">
+                        <i class="fas fa-circle text-info"></i>
+                        <strong>Reviewed:</strong> {{ application.review_date|date:"M d, Y H:i" }}<br>
+                        <small class="text-muted ms-3">by {{ application.reviewed_by.get_full_name }}</small>
+                    </li>
+                    {% endif %}
+
+                    {% if application.approved_by %}
+                    <li class="mb-2">
+                        <i class="fas fa-circle {% if application.status == 'approved' %}text-success{% else %}text-danger{% endif %}"></i>
+                        <strong>{{ application.get_status_display }}:</strong> {{ application.approval_date|date:"M d, Y H:i" }}<br>
+                        <small class="text-muted ms-3">by {{ application.approved_by.get_full_name }}</small>
+                    </li>
+                    {% endif %}
+
+                    {% if application.disbursement_date %}
+                    <li class="mb-2">
+                        <i class="fas fa-circle text-success"></i>
+                        <strong>Disbursed:</strong> {{ application.disbursement_date|date:"M d, Y" }}<br>
+                        <small class="text-muted ms-3">KES {{ application.disbursed_amount|floatformat:2 }}</small>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

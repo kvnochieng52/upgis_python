@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-graduation-cap"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'households:graduation_reports' %}" class="btn btn-info btn-sm">
+                <i class="fas fa-chart-line"></i> Reports
+            </a>
+            <a href="{% url 'households:household_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Households
+            </a>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ total_participants }}</h4>
+                            <p class="card-text">Total Participants</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ households_by_progress.graduated|default:0 }}</h4>
+                            <p class="card-text">Graduated</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-graduation-cap fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ milestones_stats.overdue_milestones }}</h4>
+                            <p class="card-text">Overdue Milestones</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-exclamation-triangle fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title">{{ milestones_stats.in_progress }}</h4>
+                            <p class="card-text">In Progress</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-3x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Progress Distribution -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-pie"></i> Progress Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 col-md-4 mb-3">
+                            <div class="progress-item">
+                                <h4 class="text-success">{{ households_by_progress.graduated|default:0 }}</h4>
+                                <small class="text-muted">Graduated (100%)</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 mb-3">
+                            <div class="progress-item">
+                                <h4 class="text-info">{{ households_by_progress.near_graduation|default:0 }}</h4>
+                                <small class="text-muted">Near Graduation (75%+)</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 mb-3">
+                            <div class="progress-item">
+                                <h4 class="text-primary">{{ households_by_progress.mid_program|default:0 }}</h4>
+                                <small class="text-muted">Mid Program (50-74%)</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 mb-3">
+                            <div class="progress-item">
+                                <h4 class="text-warning">{{ households_by_progress.early_stage|default:0 }}</h4>
+                                <small class="text-muted">Early Stage (25-49%)</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4 mb-3">
+                            <div class="progress-item">
+                                <h4 class="text-secondary">{{ households_by_progress.just_started|default:0 }}</h4>
+                                <small class="text-muted">Just Started (0-24%)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Progress Chart -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar"></i> Monthly Milestone Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyProgressChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Updates & Overdue Items -->
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-clock"></i> Recent Milestone Updates
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_milestones %}
+                    <div class="timeline">
+                        {% for milestone in recent_milestones %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-{% if milestone.status == 'completed' %}success{% elif milestone.status == 'in_progress' %}info{% else %}secondary{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ milestone.household_program.household.name }}</h6>
+                                <p class="mb-1">{{ milestone.get_milestone_display }}</p>
+                                <small class="text-muted">
+                                    <span class="badge bg-{% if milestone.status == 'completed' %}success{% elif milestone.status == 'in_progress' %}info{% else %}secondary{% endif %}">
+                                        {{ milestone.get_status_display }}
+                                    </span>
+                                    - {{ milestone.updated_at|date:"M d, Y" }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">No recent updates</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-exclamation-triangle text-warning"></i> Overdue Milestones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if overdue_milestones %}
+                    <div class="list-group list-group-flush">
+                        {% for milestone in overdue_milestones %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ milestone.household_program.household.name }}</h6>
+                                    <p class="mb-1">{{ milestone.get_milestone_display }}</p>
+                                    <small class="text-danger">
+                                        Due: {{ milestone.target_date|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                                <a href="{% url 'households:household_milestones' milestone.household_program.household.id %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Update
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">No overdue milestones</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'households:graduation_reports' %}" class="btn btn-outline-info btn-block h-100">
+                                <i class="fas fa-chart-line fa-2x d-block mb-2"></i>
+                                <strong>Generate Reports</strong>
+                                <br><small>Detailed analytics and progress reports</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'households:household_list' %}" class="btn btn-outline-primary btn-block h-100">
+                                <i class="fas fa-users fa-2x d-block mb-2"></i>
+                                <strong>Manage Households</strong>
+                                <br><small>View and edit household details</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'grants:grants_dashboard' %}" class="btn btn-outline-success btn-block h-100">
+                                <i class="fas fa-money-bill-wave fa-2x d-block mb-2"></i>
+                                <strong>Grant Management</strong>
+                                <br><small>SB and PR grant processing</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <a href="{% url 'training:training_list' %}" class="btn btn-outline-warning btn-block h-100">
+                                <i class="fas fa-chalkboard-teacher fa-2x d-block mb-2"></i>
+                                <strong>Training Sessions</strong>
+                                <br><small>Manage business training</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 15px;
+    padding-left: 25px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -8px;
+    top: 5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.progress-item {
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Monthly Progress Chart
+const ctx = document.getElementById('monthlyProgressChart').getContext('2d');
+const monthlyData = {{ monthly_data|safe }};
+
+const chartData = {
+    labels: monthlyData.map(d => `Month ${d.month}`),
+    datasets: [
+        {
+            label: 'Completed',
+            data: monthlyData.map(d => d.completed),
+            backgroundColor: '#28a745',
+            borderColor: '#28a745',
+            borderWidth: 1
+        },
+        {
+            label: 'In Progress',
+            data: monthlyData.map(d => d.in_progress),
+            backgroundColor: '#17a2b8',
+            borderColor: '#17a2b8',
+            borderWidth: 1
+        },
+        {
+            label: 'Overdue',
+            data: monthlyData.map(d => d.overdue),
+            backgroundColor: '#ffc107',
+            borderColor: '#ffc107',
+            borderWidth: 1
+        }
+    ]
+};
+
+new Chart(ctx, {
+    type: 'bar',
+    data: chartData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Milestone Progress by Month'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Business Groups - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-users"></i> {{ page_title }}</h1>
+    <a href="{% url 'business_groups:group_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Business Group
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card stat-card-blue">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ groups.count }}</h3>
+                    <p class="mb-0">Total Groups</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-green">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>{{ groups|length }}</h3>
+                    <p class="mb-0">Active Groups</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-chart-line fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card stat-card-orange">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>0</h3>
+                    <p class="mb-0">Pending</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-clock fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h3>0</h3>
+                    <p class="mb-0">Completed</p>
+                </div>
+                <div class="align-self-center">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Business Groups Table -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-list"></i> Business Groups</h5>
+    </div>
+    <div class="card-body">
+        {% if groups %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Group Name</th>
+                        <th>Formation Date</th>
+                        <th>Status</th>
+                        <th>Members</th>
+                        <th>Village</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in groups %}
+                    <tr>
+                        <td>
+                            <strong>{{ group.name }}</strong><br>
+                            <small class="text-muted">{{ group.business_type|default:"Not specified" }}</small>
+                        </td>
+                        <td>{{ group.formation_date|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="badge bg-{% if group.participation_status == 'active' %}success{% elif group.participation_status == 'graduated' %}primary{% else %}secondary{% endif %}">
+                                {{ group.get_participation_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ group.members.count|default:0 }}</td>
+                        <td>{{ group.village.name|default:"Not specified" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'business_groups:group_detail' group.pk %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'business_groups:group_edit' group.pk %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No Business Groups Found</h4>
+            <p class="text-muted">No business groups have been created yet.</p>
+            <a href="{% url 'business_groups:group_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create First Business Group
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'business_groups:group_create' %}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-plus"></i> New Business Group
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-success w-100" disabled>
+                    <i class="fas fa-user-plus"></i> Add Member
+                </button>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-info w-100" disabled>
+                    <i class="fas fa-chart-bar"></i> Generate Report
+                </button>
+            </div>
+            <div class="col-md-3 mb-2">
+                <button class="btn btn-outline-warning w-100" disabled>
+                    <i class="fas fa-download"></i> Export Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

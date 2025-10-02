@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-project-diagram"></i> {{ program.name }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'programs:program_list' %}">Programs</a></li>
+                <li class="breadcrumb-item active">{{ program.name }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-group">
+        {% if user.is_superuser or user == program.created_by or user.role in 'ict_admin,county_executive' %}
+        <a href="{% url 'programs:program_edit' program.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-edit"></i> Edit Program
+        </a>
+        {% endif %}
+        {% if user.is_superuser or user.role == 'ict_admin' %}
+        <a href="{% url 'programs:program_delete' program.pk %}" class="btn btn-outline-danger">
+            <i class="fas fa-trash"></i> Delete
+        </a>
+        {% endif %}
+        {% if program.is_accepting_applications and can_apply %}
+        <a href="{% url 'programs:program_apply' program.pk %}" class="btn btn-success">
+            <i class="fas fa-paper-plane"></i> Apply Now
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Program Details -->
+    <div class="col-md-8">
+        <!-- Program Status and Basic Info -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-info-circle"></i> Program Information</h5>
+                <span class="badge bg-{% if program.status == 'active' %}success{% elif program.status == 'paused' %}warning{% elif program.status == 'ended' %}danger{% else %}secondary{% endif %} fs-6">
+                    {{ program.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Program Type:</strong> {{ program.get_program_type_display }}</p>
+                        <p><strong>Duration:</strong> {{ program.duration_months }} months</p>
+                        <p><strong>Target Beneficiaries:</strong> {{ program.target_beneficiaries }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>County:</strong> {{ program.county|default:"All Counties" }}</p>
+                        <p><strong>Created:</strong> {{ program.created_at|date:"M d, Y" }}</p>
+                        {% if program.budget %}
+                        <p><strong>Budget:</strong> KES {{ program.budget|floatformat:0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="mb-3">
+                    <h6><i class="fas fa-file-alt"></i> Description</h6>
+                    <p class="text-muted">{{ program.description|linebreaks }}</p>
+                </div>
+
+                {% if program.eligibility_criteria %}
+                <div class="mb-3">
+                    <h6><i class="fas fa-check-circle"></i> Eligibility Criteria</h6>
+                    <p class="text-muted">{{ program.eligibility_criteria|linebreaks }}</p>
+                </div>
+                {% endif %}
+
+                {% if program.application_requirements %}
+                <div class="mb-3">
+                    <h6><i class="fas fa-clipboard-list"></i> Application Requirements</h6>
+                    <p class="text-muted">{{ program.application_requirements|linebreaks }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Application Status for User -->
+        {% if user_application %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-paper-plane"></i> Your Application Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-1"><strong>Application Date:</strong> {{ user_application.application_date|date:"M d, Y" }}</p>
+                        <p class="mb-0">
+                            <strong>Status:</strong>
+                            <span class="badge bg-{% if user_application.status == 'approved' %}success{% elif user_application.status == 'rejected' %}danger{% elif user_application.status == 'under_review' %}warning{% else %}secondary{% endif %}">
+                                {{ user_application.get_status_display }}
+                            </span>
+                        </p>
+                    </div>
+                    {% if user_application.status == 'pending' %}
+                    <small class="text-muted">Application under review</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Quick Stats -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Program Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Applications:</span>
+                    <strong>{{ program.applications.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Approved:</span>
+                    <strong class="text-success">{{ program.applications.filter_status.approved.count|default:0 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Under Review:</span>
+                    <strong class="text-warning">{{ program.applications.filter_status.under_review.count|default:0 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Available Slots:</span>
+                    <strong class="text-info">{{ program.remaining_slots|default:"Unlimited" }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Program Creator -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-user"></i> Program Manager</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>{{ program.created_by.get_full_name|default:program.created_by.username }}</strong></p>
+                <p class="mb-0 text-muted">{{ program.created_by.get_role_display|default:"Program Manager" }}</p>
+            </div>
+        </div>
+
+        <!-- Management Actions for Authorized Users -->
+        {% if user.is_superuser or user == program.created_by or user.role in 'ict_admin,county_executive' %}
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-cogs"></i> Program Management</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'programs:program_applications' program.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> View Applications ({{ program.applications.count }})
+                    </a>
+                    <a href="{% url 'programs:program_edit' program.pk %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-edit"></i> Edit Program
+                    </a>
+                    {% if user.is_superuser or user.role == 'ict_admin' %}
+                    <a href="{% url 'programs:program_delete' program.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> Delete Program
+                    </a>
+                    {% endif %}
+
+                    <!-- Status Toggle Form -->
+                    <div class="mt-3">
+                        <form method="post" action="{% url 'programs:program_toggle_status' program.pk %}">
+                            {% csrf_token %}
+                            <label for="status" class="form-label small">Change Status:</label>
+                            <div class="input-group input-group-sm">
+                                <select class="form-select" id="status" name="status">
+                                    <option value="active" {% if program.status == 'active' %}selected{% endif %}>Active</option>
+                                    <option value="paused" {% if program.status == 'paused' %}selected{% endif %}>Paused</option>
+                                    <option value="ended" {% if program.status == 'ended' %}selected{% endif %}>Ended</option>
+                                    <option value="draft" {% if program.status == 'draft' %}selected{% endif %}>Draft</option>
+                                </select>
+                                <button type="submit" class="btn btn-outline-warning">
+                                    <i class="fas fa-sync"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

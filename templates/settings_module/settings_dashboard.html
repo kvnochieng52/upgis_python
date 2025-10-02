@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block title %}System Settings - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-cogs"></i> System Settings</h1>
+    <span class="badge bg-primary fs-6">Administrator Dashboard</span>
+</div>
+
+<!-- Admin Notice -->
+<div class="alert alert-info mb-4">
+    <i class="fas fa-shield-alt me-2"></i>
+    <strong>Administrator Access:</strong> You have full system configuration access including user management, system configuration, and audit logging.
+</div>
+
+<!-- System Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4>{{ total_users }}</h4>
+                <small>Total Users</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>{{ active_users }}</h4>
+                <small>Active Users</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>{{ recent_logins }}</h4>
+                <small>Recent Logins (7 days)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h4>{{ config_count }}</h4>
+                <small>Configuration Items</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Management Modules -->
+<div class="row mb-4">
+    <!-- User Management -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-users"></i> User Management</h5>
+                <span class="badge bg-secondary">{{ total_users }} users</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Manage system users, roles, and permissions</p>
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Active:</strong> {{ active_users }}</p>
+                        <p><strong>Inactive:</strong> {{ inactive_users }}</p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong>Recent Activity:</strong> {{ recent_logins }} logins</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{% url 'settings:user_management' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-users"></i> Manage Users
+                    </a>
+                    <a href="{% url 'settings:user_create' %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus"></i> Add User
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Configuration -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-cog"></i> System Configuration</h5>
+                <span class="badge bg-info">{{ config_count }} settings</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Configure system-wide settings and parameters</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success me-2"></i>Application Settings</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Email Configuration</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Security Settings</li>
+                    <li><i class="fas fa-check text-success me-2"></i>Integration Settings</li>
+                </ul>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{% url 'settings:system_config' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-cog"></i> Configure System
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Audit & Logging -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-list"></i> Audit & Logging</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Monitor system activity and track user actions</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-eye text-info me-2"></i>User Activity Tracking</li>
+                    <li><i class="fas fa-edit text-warning me-2"></i>Data Modification Logs</li>
+                    <li><i class="fas fa-shield-alt text-success me-2"></i>Security Events</li>
+                    <li><i class="fas fa-download text-primary me-2"></i>Export & Import Logs</li>
+                </ul>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{% url 'settings:audit_logs' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-list"></i> View Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Alerts -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-bell"></i> System Alerts</h5>
+                <span class="badge bg-warning">{{ active_alerts }} active</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Manage system-wide notifications and alerts</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-info-circle text-info me-2"></i>Information Alerts</li>
+                    <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>Warning Messages</li>
+                    <li><i class="fas fa-times-circle text-danger me-2"></i>Critical Alerts</li>
+                    <li><i class="fas fa-tools text-secondary me-2"></i>Maintenance Notices</li>
+                </ul>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{% url 'settings:system_alerts' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-bell"></i> Manage Alerts
+                    </a>
+                    <a href="{% url 'settings:create_alert' %}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-plus"></i> Create Alert
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> System Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>System Version:</strong></td>
+                        <td>{{ system_version }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Last Backup:</strong></td>
+                        <td>
+                            {% if last_backup %}
+                                {{ last_backup.completed_at|date:"M d, Y H:i" }}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="text-muted">No backups found</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Database Status:</strong></td>
+                        <td><span class="badge bg-success">Online</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>System Status:</strong></td>
+                        <td><span class="badge bg-success">Operational</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4 class="text-primary">{{ recent_logins }}</h4>
+                        <small class="text-muted">Recent Logins</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-success">{{ active_alerts }}</h4>
+                        <small class="text-muted">Active Alerts</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-info">{{ config_count }}</h4>
+                        <small class="text-muted">Configurations</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">Last updated: {{ last_backup.completed_at|date:"H:i" }}</small>
+                    <a href="{% url 'settings:user_settings' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user-cog"></i> My Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-2 mb-3">
+                <a href="{% url 'settings:user_create' %}" class="btn btn-outline-success w-100">
+                    <i class="fas fa-user-plus"></i><br>Add User
+                </a>
+            </div>
+            <div class="col-md-2 mb-3">
+                <a href="{% url 'settings:system_config' %}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-cog"></i><br>System Config
+                </a>
+            </div>
+            <div class="col-md-2 mb-3">
+                <a href="{% url 'settings:audit_logs' %}" class="btn btn-outline-info w-100">
+                    <i class="fas fa-clipboard-list"></i><br>Audit Logs
+                </a>
+            </div>
+            <div class="col-md-2 mb-3">
+                <a href="{% url 'settings:create_alert' %}" class="btn btn-outline-warning w-100">
+                    <i class="fas fa-bell"></i><br>Create Alert
+                </a>
+            </div>
+            <div class="col-md-2 mb-3">
+                <a href="{% url 'settings:user_settings' %}" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-user-cog"></i><br>My Settings
+                </a>
+            </div>
+            <div class="col-md-2 mb-3">
+                <button class="btn btn-outline-danger w-100" onclick="showMaintenanceModal()">
+                    <i class="fas fa-tools"></i><br>Maintenance
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Maintenance Modal -->
+<div class="modal fade" id="maintenanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">System Maintenance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> System maintenance operations should be performed during off-peak hours.
+                </div>
+                <div class="list-group">
+                    <button class="list-group-item list-group-item-action" onclick="alert('Backup functionality - to be implemented')">
+                        <i class="fas fa-database text-primary me-2"></i>Create System Backup
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="alert('Cache clear functionality - to be implemented')">
+                        <i class="fas fa-trash text-warning me-2"></i>Clear System Cache
+                    </button>
+                    <button class="list-group-item list-group-item-action" onclick="alert('Log cleanup functionality - to be implemented')">
+                        <i class="fas fa-broom text-info me-2"></i>Clean Log Files
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showMaintenanceModal() {
+    new bootstrap.Modal(document.getElementById('maintenanceModal')).show();
+}
+</script>
+
+{% endblock %}

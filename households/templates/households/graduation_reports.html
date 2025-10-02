@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-chart-line"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <button class="btn btn-success btn-sm" onclick="exportReport('excel')">
+                <i class="fas fa-file-excel"></i> Export Excel
+            </button>
+            <button class="btn btn-info btn-sm" onclick="exportReport('pdf')">
+                <i class="fas fa-file-pdf"></i> Export PDF
+            </button>
+            <a href="{% url 'households:graduation_dashboard' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Program Analytics -->
+    {% for analytics in program_analytics %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-graduation-cap"></i> {{ analytics.program.name }}
+            </h5>
+            <small class="text-muted">{{ analytics.program.description }}</small>
+        </div>
+        <div class="card-body">
+            <!-- Key Metrics -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card bg-primary text-white">
+                        <div class="metric-value">{{ analytics.total_households }}</div>
+                        <div class="metric-label">Total Participants</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card bg-success text-white">
+                        <div class="metric-value">{{ analytics.graduation_rate|floatformat:1 }}%</div>
+                        <div class="metric-label">Graduation Rate</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card bg-info text-white">
+                        <div class="metric-value">{{ analytics.average_progress|floatformat:1 }}%</div>
+                        <div class="metric-label">Average Progress</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="metric-card bg-warning text-white">
+                        <div class="metric-value">{{ analytics.overdue_milestones }}</div>
+                        <div class="metric-label">Overdue Milestones</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Breakdown -->
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title">Milestone Completion Overview</h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="programChart{{ forloop.counter }}" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title">Program Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Start Date:</strong></td>
+                                    <td>{{ analytics.program.start_date|date:"M d, Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Duration:</strong></td>
+                                    <td>{{ analytics.program.duration_months }} months</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Milestones:</strong></td>
+                                    <td>{{ analytics.total_milestones }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Completed:</strong></td>
+                                    <td>{{ analytics.completed_milestones }} ({% widthratio analytics.completed_milestones analytics.total_milestones 100 %}%)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Target Villages:</strong></td>
+                                    <td>{{ analytics.program.target_villages.count }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Budget:</strong></td>
+                                    <td>KES {{ analytics.program.budget|floatformat:0 }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+            <h4>No UPG Programs Found</h4>
+            <p class="text-muted">No graduation programs are currently active in the system.</p>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Summary Statistics -->
+    {% if program_analytics %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">
+                <i class="fas fa-chart-bar"></i> Overall System Performance
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-8">
+                    <canvas id="overallChart" height="100"></canvas>
+                </div>
+                <div class="col-lg-4">
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <h4 class="text-primary">{{ program_analytics|length }}</h4>
+                            <small>Active Programs</small>
+                        </div>
+                        <div class="stat-item">
+                            <h4 class="text-success">{{ overall_graduation_rate|floatformat:1 }}%</h4>
+                            <small>Average Graduation Rate</small>
+                        </div>
+                        <div class="stat-item">
+                            <h4 class="text-info">{{ total_participants }}</h4>
+                            <small>Total Participants</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.metric-card {
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.summary-stats .stat-item {
+    text-align: center;
+    padding: 15px;
+    margin-bottom: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.summary-stats .stat-item h4 {
+    margin-bottom: 5px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Program-specific charts
+{% for analytics in program_analytics %}
+const ctx{{ forloop.counter }} = document.getElementById('programChart{{ forloop.counter }}').getContext('2d');
+new Chart(ctx{{ forloop.counter }}, {
+    type: 'doughnut',
+    data: {
+        labels: ['Completed', 'Overdue', 'Remaining'],
+        datasets: [{
+            data: [
+                {{ analytics.completed_milestones }},
+                {{ analytics.overdue_milestones }},
+                {{ analytics.remaining_milestones }}
+            ],
+            backgroundColor: ['#28a745', '#ffc107', '#6c757d'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endfor %}
+
+// Overall system chart
+{% if program_analytics %}
+const overallCtx = document.getElementById('overallChart').getContext('2d');
+new Chart(overallCtx, {
+    type: 'bar',
+    data: {
+        labels: [{% for analytics in program_analytics %}'{{ analytics.program.name|truncatechars:20 }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Graduation Rate (%)',
+            data: [{% for analytics in program_analytics %}{{ analytics.graduation_rate|floatformat:1 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#28a745',
+            borderColor: '#28a745',
+            borderWidth: 1
+        }, {
+            label: 'Average Progress (%)',
+            data: [{% for analytics in program_analytics %}{{ analytics.average_progress|floatformat:1 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#17a2b8',
+            borderColor: '#17a2b8',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Program Performance Comparison'
+            }
+        }
+    }
+});
+{% endif %}
+
+function exportReport(format) {
+    const exportUrl = `/households/graduation/reports/export/?format=${format}`;
+    window.open(exportUrl, '_blank');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-plus"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'training:mentoring_reports' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Reports
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Report Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="reportForm">
+                        {% csrf_token %}
+
+                        <!-- Reporting Period -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="reporting_period" class="form-label">Reporting Period <span class="text-danger">*</span></label>
+                                <select class="form-select" id="reporting_period" name="reporting_period" required>
+                                    <option value="">Select Period Type</option>
+                                    {% for key, value in reporting_periods %}
+                                    <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="period_start" class="form-label">Period Start <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="period_start" name="period_start" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="period_end" class="form-label">Period End <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="period_end" name="period_end" required>
+                            </div>
+                        </div>
+
+                        <!-- Statistics Preview -->
+                        <div class="row mb-4" id="statsPreview" style="display: none;">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> Automated Statistics (for selected period)</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <strong>Visits:</strong> <span id="visitsCount">-</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Phone Nudges:</strong> <span id="nudgesCount">-</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Trainings:</strong> <span id="trainingsCount">-</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Households:</strong> <span id="householdsCount">-</span>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">These statistics will be automatically calculated when you submit the report.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Key Activities -->
+                        <div class="mb-3">
+                            <label for="key_activities" class="form-label">Key Activities <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="key_activities" name="key_activities" rows="4" required
+                                placeholder="Describe the main activities undertaken during this reporting period..."></textarea>
+                            <div class="form-text">Provide a detailed overview of all mentoring activities, visits, trainings, and other key work completed.</div>
+                        </div>
+
+                        <!-- Challenges Faced -->
+                        <div class="mb-3">
+                            <label for="challenges_faced" class="form-label">Challenges Faced</label>
+                            <textarea class="form-control" id="challenges_faced" name="challenges_faced" rows="3"
+                                placeholder="Describe any challenges or obstacles encountered..."></textarea>
+                            <div class="form-text">Optional: Describe any difficulties, constraints, or issues that affected your work.</div>
+                        </div>
+
+                        <!-- Successes Achieved -->
+                        <div class="mb-3">
+                            <label for="successes_achieved" class="form-label">Successes Achieved</label>
+                            <textarea class="form-control" id="successes_achieved" name="successes_achieved" rows="3"
+                                placeholder="Highlight key achievements and positive outcomes..."></textarea>
+                            <div class="form-text">Optional: Share notable achievements, positive outcomes, or success stories.</div>
+                        </div>
+
+                        <!-- Next Period Plans -->
+                        <div class="mb-4">
+                            <label for="next_period_plans" class="form-label">Next Period Plans</label>
+                            <textarea class="form-control" id="next_period_plans" name="next_period_plans" rows="3"
+                                placeholder="Outline your plans and priorities for the next reporting period..."></textarea>
+                            <div class="form-text">Optional: Describe your upcoming priorities, planned activities, and goals.</div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'training:mentoring_reports' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Submit Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Guidelines -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-lightbulb"></i> Report Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Reporting Periods:</h6>
+                    <ul class="small">
+                        <li><strong>Weekly:</strong> Sunday to Saturday</li>
+                        <li><strong>Monthly:</strong> 1st to last day of month</li>
+                        <li><strong>Quarterly:</strong> 3-month periods</li>
+                    </ul>
+
+                    <h6>Key Activities Should Include:</h6>
+                    <ul class="small">
+                        <li>Household visits conducted</li>
+                        <li>Training sessions delivered</li>
+                        <li>Phone nudges and follow-ups</li>
+                        <li>Business coaching provided</li>
+                        <li>Group meetings facilitated</li>
+                    </ul>
+
+                    <h6>Best Practices:</h6>
+                    <ul class="small">
+                        <li>Be specific with numbers and dates</li>
+                        <li>Include both quantitative and qualitative insights</li>
+                        <li>Mention beneficiary feedback when relevant</li>
+                        <li>Focus on outcomes, not just activities</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Report History -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-history"></i> Your Recent Reports</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Your recent mentoring reports will be shown here for reference.</p>
+                    <!-- This could be populated with recent reports -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reportingPeriod = document.getElementById('reporting_period');
+    const periodStart = document.getElementById('period_start');
+    const periodEnd = document.getElementById('period_end');
+    const statsPreview = document.getElementById('statsPreview');
+
+    // Auto-fill dates based on reporting period
+    reportingPeriod.addEventListener('change', function() {
+        const today = new Date();
+        let startDate, endDate;
+
+        switch(this.value) {
+            case 'weekly':
+                // Start of current week (Sunday)
+                startDate = new Date(today.setDate(today.getDate() - today.getDay()));
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+                break;
+            case 'monthly':
+                // Start of current month
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                break;
+            case 'quarterly':
+                // Start of current quarter
+                const quarter = Math.floor((today.getMonth() / 3));
+                startDate = new Date(today.getFullYear(), quarter * 3, 1);
+                endDate = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+                break;
+        }
+
+        if (startDate && endDate) {
+            periodStart.value = startDate.toISOString().split('T')[0];
+            periodEnd.value = endDate.toISOString().split('T')[0];
+            statsPreview.style.display = 'block';
+        }
+    });
+
+    // Form validation
+    document.getElementById('reportForm').addEventListener('submit', function(e) {
+        const start = new Date(periodStart.value);
+        const end = new Date(periodEnd.value);
+
+        if (start >= end) {
+            e.preventDefault();
+            alert('Period end date must be after the start date.');
+            return false;
+        }
+
+        // Check if period is too long
+        const daysDiff = (end - start) / (1000 * 60 * 60 * 24);
+        const periodType = reportingPeriod.value;
+
+        if (periodType === 'weekly' && daysDiff > 7) {
+            e.preventDefault();
+            alert('Weekly reports should not exceed 7 days.');
+            return false;
+        } else if (periodType === 'monthly' && daysDiff > 31) {
+            e.preventDefault();
+            alert('Monthly reports should not exceed 31 days.');
+            return false;
+        } else if (periodType === 'quarterly' && daysDiff > 93) {
+            e.preventDefault();
+            alert('Quarterly reports should not exceed 93 days.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

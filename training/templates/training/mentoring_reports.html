@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-file-alt"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            {% if user_role == 'mentor' %}
+            <a href="{% url 'training:create_mentoring_report' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> Create Report
+            </a>
+            {% endif %}
+            {% if user_role != 'mentor' %}
+            <button class="btn btn-info btn-sm" onclick="exportReports()">
+                <i class="fas fa-file-excel"></i> Export CSV
+            </button>
+            {% endif %}
+            <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title"><i class="fas fa-filter"></i> Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                {% if user_role != 'mentor' %}
+                <div class="col-md-3">
+                    <label for="mentor" class="form-label">Mentor</label>
+                    <select class="form-select" id="mentor" name="mentor">
+                        <option value="">All Mentors</option>
+                        {% for mentor in mentors %}
+                        <option value="{{ mentor.id }}" {% if current_filters.mentor == mentor.id|stringformat:"s" %}selected{% endif %}>
+                            {{ mentor.get_full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <div class="col-md-2">
+                    <label for="period" class="form-label">Period Type</label>
+                    <select class="form-select" id="period" name="period">
+                        <option value="">All Periods</option>
+                        <option value="weekly" {% if current_filters.period == 'weekly' %}selected{% endif %}>Weekly</option>
+                        <option value="monthly" {% if current_filters.period == 'monthly' %}selected{% endif %}>Monthly</option>
+                        <option value="quarterly" {% if current_filters.period == 'quarterly' %}selected{% endif %}>Quarterly</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ current_filters.date_from }}">
+                </div>
+
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ current_filters.date_to }}">
+                </div>
+
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                    <a href="{% url 'training:mentoring_reports' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Mentoring Reports</h5>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            {% if user_role != 'mentor' %}<th>Mentor</th>{% endif %}
+                            <th>Period</th>
+                            <th>Type</th>
+                            <th>Households Visited</th>
+                            <th>Phone Nudges</th>
+                            <th>Trainings</th>
+                            <th>New Enrollments</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in page_obj %}
+                        <tr>
+                            {% if user_role != 'mentor' %}
+                            <td>
+                                <strong>{{ report.mentor.get_full_name }}</strong>
+                                <br><small class="text-muted">{{ report.mentor.email }}</small>
+                            </td>
+                            {% endif %}
+                            <td>
+                                <strong>{{ report.period_start|date:"M d" }} - {{ report.period_end|date:"M d, Y" }}</strong>
+                                <br><small class="text-muted">{{ report.period_end|timesince }} ago</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if report.reporting_period == 'weekly' %}info{% elif report.reporting_period == 'monthly' %}success{% else %}warning{% endif %}">
+                                    {{ report.get_reporting_period_display }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <h5 class="text-primary mb-0">{{ report.households_visited }}</h5>
+                            </td>
+                            <td class="text-center">
+                                <h5 class="text-success mb-0">{{ report.phone_nudges_made }}</h5>
+                            </td>
+                            <td class="text-center">
+                                <h5 class="text-info mb-0">{{ report.trainings_conducted }}</h5>
+                            </td>
+                            <td class="text-center">
+                                <h5 class="text-warning mb-0">{{ report.new_households_enrolled }}</h5>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ report.submitted_date|date:"M d, Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <a href="{% url 'training:mentoring_report_detail' report.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Reports pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                <h4>No Reports Found</h4>
+                <p class="text-muted">
+                    {% if user_role == 'mentor' %}
+                    You haven't submitted any mentoring reports yet.
+                    <br><a href="{% url 'training:create_mentoring_report' %}" class="btn btn-success mt-2">
+                        <i class="fas fa-plus"></i> Create Your First Report
+                    </a>
+                    {% else %}
+                    No mentoring reports match your current filters.
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if user_role != 'mentor' %}
+<script>
+function exportReports() {
+    const params = new URLSearchParams(window.location.search);
+    const exportUrl = '{% url "training:export_mentoring_reports" %}?' + params.toString();
+    window.open(exportUrl, '_blank');
+}
+</script>
+{% endif %}
+{% endblock %}

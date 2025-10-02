@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-user-times text-danger"></i> {{ page_title }}</h1>
+    <a href="{% url 'settings:user_management' %}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Users
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-triangle"></i> Confirm User Deletion</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-warning"></i> CRITICAL WARNING: This action cannot be undone!</h6>
+                    <p class="mb-0">You are about to permanently delete the following user and ALL associated data:</p>
+                </div>
+
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <h6><strong>{{ user_obj.get_full_name|default:user_obj.username }}</strong></h6>
+                                        <small class="text-muted">@{{ user_obj.username }}</small>
+                                    </div>
+                                </div>
+                                <p><strong>Email:</strong> {{ user_obj.email|default:"Not provided" }}</p>
+                                <p><strong>Role:</strong>
+                                    <span class="badge bg-{% if user_obj.role == 'ict_admin' %}danger{% elif user_obj.role == 'county_executive' %}warning{% elif user_obj.role == 'me_staff' %}info{% elif user_obj.role == 'field_associate' %}success{% elif user_obj.role == 'mentor' %}primary{% else %}secondary{% endif %}">
+                                        {{ user_obj.get_role_display }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Status:</strong>
+                                    {% if user_obj.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                    {% if user_obj.is_superuser %}
+                                        <span class="badge bg-warning">Admin</span>
+                                    {% endif %}
+                                </p>
+                                <p><strong>Date Joined:</strong> {{ user_obj.date_joined|date:"M d, Y" }}</p>
+                                <p><strong>Last Login:</strong>
+                                    {% if user_obj.last_login %}
+                                        {{ user_obj.last_login|date:"M d, Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Never</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-times-circle text-danger"></i> This will permanently delete:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-times text-danger me-2"></i>User account and profile</li>
+                            <li><i class="fas fa-times text-danger me-2"></i>All login credentials</li>
+                            <li><i class="fas fa-times text-danger me-2"></i>Associated data and records</li>
+                            <li><i class="fas fa-times text-danger me-2"></i>Permission assignments</li>
+                            <li><i class="fas fa-times text-danger me-2"></i>Activity history</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-info-circle text-info"></i> User Details:</h6>
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Username:</span>
+                                    <strong class="text-warning">{{ user_obj.username }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Role:</span>
+                                    <strong class="text-warning">{{ user_obj.get_role_display }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Account Age:</span>
+                                    <strong class="text-{% if user_obj.date_joined|timesince|slice:':1' == '0' %}danger{% else %}warning{% endif %}">
+                                        {{ user_obj.date_joined|timesince }} old
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if user_obj.is_active %}
+                        <div class="alert alert-warning mt-3">
+                            <small>
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Active User:</strong> This user account is currently active and may have ongoing activities.
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-lightbulb"></i> Alternative Actions:</h6>
+                        <p class="mb-2">Instead of deleting, consider:</p>
+                        <ul class="mb-0">
+                            <li><strong>Deactivate the user</strong> to disable access while preserving data</li>
+                            <li><strong>Change user role</strong> to reduce permissions</li>
+                            <li><strong>Reset password</strong> if this is a security concern</li>
+                            <li><strong>Archive the account</strong> for future reference</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirm_delete" required>
+                        <label class="form-check-label text-danger" for="confirm_delete">
+                            <strong>I understand this action is permanent and will delete all user data</strong>
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'settings:user_management' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <a href="{% url 'settings:user_edit' user_obj.id %}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit Instead
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Yes, Delete Permanently
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

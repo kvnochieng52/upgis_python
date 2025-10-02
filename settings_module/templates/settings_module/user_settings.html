@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ page_title }}</h3>
+                    <div class="card-tools">
+                        {% if not is_own_settings %}
+                        <a href="{% url 'settings:user_management' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Users
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post">
+                    <div class="card-body">
+                        {% csrf_token %}
+
+                        <!-- User Information -->
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">User Information</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Username:</strong> {{ settings_user.username }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Email:</strong> {{ settings_user.email }}
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-6">
+                                    <strong>Role:</strong> {{ settings_user.get_role_display }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Last Login:</strong>
+                                    {% if settings_user.last_login %}
+                                    {{ settings_user.last_login|date:"M d, Y H:i" }}
+                                    {% else %}
+                                    Never
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notification Settings -->
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">Notification Preferences</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="email_notifications"
+                                               id="email_notifications" {% if settings_obj.email_notifications %}checked{% endif %}>
+                                        <label class="form-check-label" for="email_notifications">
+                                            Email Notifications
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Receive system notifications via email</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="sms_notifications"
+                                               id="sms_notifications" {% if settings_obj.sms_notifications %}checked{% endif %}>
+                                        <label class="form-check-label" for="sms_notifications">
+                                            SMS Notifications
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Receive urgent notifications via SMS</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interface Settings -->
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">Interface Preferences</h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="theme" class="form-label">Theme</label>
+                                        <select class="form-select" name="theme" id="theme">
+                                            <option value="light" {% if settings_obj.theme == 'light' %}selected{% endif %}>Light</option>
+                                            <option value="dark" {% if settings_obj.theme == 'dark' %}selected{% endif %}>Dark</option>
+                                            <option value="auto" {% if settings_obj.theme == 'auto' %}selected{% endif %}>Auto</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="language" class="form-label">Language</label>
+                                        <select class="form-select" name="language" id="language">
+                                            <option value="en" {% if settings_obj.language == 'en' %}selected{% endif %}>English</option>
+                                            <option value="sw" {% if settings_obj.language == 'sw' %}selected{% endif %}>Swahili</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="timezone" class="form-label">Timezone</label>
+                                        <select class="form-select" name="timezone" id="timezone">
+                                            <option value="Africa/Nairobi" {% if settings_obj.timezone == 'Africa/Nairobi' %}selected{% endif %}>East Africa Time (EAT)</option>
+                                            <option value="UTC" {% if settings_obj.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Security -->
+                        {% if is_own_settings %}
+                        <div class="mb-4">
+                            <h5 class="text-primary border-bottom pb-2">Account Security</h5>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <p class="text-muted">
+                                        <i class="fas fa-info-circle"></i>
+                                        To change your password, contact your system administrator or use the password reset option.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Settings Summary -->
+                        <div class="mb-3">
+                            <h6 class="text-muted">Settings Last Updated</h6>
+                            <small class="text-muted">
+                                {% if settings_obj.updated_at %}
+                                {{ settings_obj.updated_at|date:"M d, Y H:i" }}
+                                {% else %}
+                                Never updated
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                        {% if is_own_settings %}
+                        <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">Cancel</a>
+                        {% else %}
+                        <a href="{% url 'settings:user_management' %}" class="btn btn-secondary">Cancel</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

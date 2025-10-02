@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ page_title }}</h3>
+                    <div class="card-tools">
+                        <a href="{% url 'settings:system_alerts' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Alerts
+                        </a>
+                    </div>
+                </div>
+
+                <form method="post">
+                    <div class="card-body">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Alert Title *</label>
+                                    <input type="text" class="form-control" id="title" name="title" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="alert_type" class="form-label">Alert Type</label>
+                                    <select class="form-select" id="alert_type" name="alert_type">
+                                        {% for value, label in alert_types %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Alert Message *</label>
+                            <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="scope" class="form-label">Alert Scope</label>
+                                    <select class="form-select" id="scope" name="scope" onchange="toggleRoleTargeting()">
+                                        {% for value, label in alert_scopes %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="role_targeting" class="mb-3" style="display: none;">
+                            <label class="form-label">Target Roles</label>
+                            <div class="row">
+                                {% for value, label in role_choices %}
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               name="target_roles" value="{{ value }}" id="role_{{ value }}">
+                                        <label class="form-check-label" for="role_{{ value }}">
+                                            {{ label }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-bell"></i> Create Alert
+                        </button>
+                        <a href="{% url 'settings:system_alerts' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleRoleTargeting() {
+    const scope = document.getElementById('scope').value;
+    const roleTargeting = document.getElementById('role_targeting');
+
+    if (scope === 'role') {
+        roleTargeting.style.display = 'block';
+    } else {
+        roleTargeting.style.display = 'none';
+    }
+}
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleRoleTargeting();
+});
+</script>
+{% endblock %}

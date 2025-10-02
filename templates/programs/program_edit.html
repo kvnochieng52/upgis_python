@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-edit"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'programs:program_detail' program.pk %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Program
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-edit"></i> Edit Program Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Program Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ program.name }}" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="program_type" class="form-label">Program Type</label>
+                            <select class="form-select" id="program_type" name="program_type">
+                                {% for value, label in program_types %}
+                                <option value="{{ value }}" {% if program.program_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="description" name="description" rows="4" required>{{ program.description }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="budget" class="form-label">Budget (KES)</label>
+                            <input type="number" class="form-control" id="budget" name="budget" value="{{ program.budget|default:'' }}">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="target_beneficiaries" class="form-label">Target Beneficiaries</label>
+                            <input type="number" class="form-control" id="target_beneficiaries" name="target_beneficiaries" value="{{ program.target_beneficiaries }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="eligibility_criteria" class="form-label">Eligibility Criteria</label>
+                        <textarea class="form-control" id="eligibility_criteria" name="eligibility_criteria" rows="3">{{ program.eligibility_criteria }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="application_requirements" class="form-label">Application Requirements</label>
+                        <textarea class="form-control" id="application_requirements" name="application_requirements" rows="3">{{ program.application_requirements }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'programs:program_detail' program.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Program Information</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Current Status:</strong>
+                    <span class="badge bg-{% if program.status == 'active' %}success{% elif program.status == 'paused' %}warning{% elif program.status == 'ended' %}danger{% else %}secondary{% endif %}">
+                        {{ program.get_status_display }}
+                    </span>
+                </p>
+                <p><strong>Created:</strong> {{ program.created_at|date:"M d, Y" }}</p>
+                <p><strong>Created By:</strong> {{ program.created_by.get_full_name|default:program.created_by.username }}</p>
+                {% if program.applications.count %}
+                <p><strong>Applications:</strong> {{ program.applications.count }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Change Status Card -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-toggle-on"></i> Change Status</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'programs:program_toggle_status' program.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="status" class="form-label">New Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="active" {% if program.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="paused" {% if program.status == 'paused' %}selected{% endif %}>Paused</option>
+                            <option value="ended" {% if program.status == 'ended' %}selected{% endif %}>Ended</option>
+                            <option value="draft" {% if program.status == 'draft' %}selected{% endif %}>Draft</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-warning btn-sm w-100">
+                        <i class="fas fa-sync"></i> Update Status
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-home"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'training:visit_list' %}" class="btn btn-info btn-sm">
+                <i class="fas fa-list"></i> View All Visits
+            </a>
+            <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Visit Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="visitForm">
+                        {% csrf_token %}
+
+                        <!-- Household Selection -->
+                        <div class="mb-3">
+                            <label for="household" class="form-label">Household <span class="text-danger">*</span></label>
+                            <select class="form-select" id="household" name="household" required>
+                                <option value="">Select Household</option>
+                                {% for household in households %}
+                                <option value="{{ household.id }}" data-village="{{ household.village.name }}" data-phone="{{ household.phone_number }}">
+                                    {{ household.name }} - {{ household.village.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the household you visited</div>
+                        </div>
+
+                        <!-- Visit Name -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Visit Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                placeholder="e.g., Weekly Check-in, Business Planning Session">
+                            <div class="form-text">Give this visit a descriptive name</div>
+                        </div>
+
+                        <!-- Visit Details -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="visit_type" class="form-label">Visit Type <span class="text-danger">*</span></label>
+                                <select class="form-select" id="visit_type" name="visit_type" required>
+                                    <option value="">Select Visit Type</option>
+                                    {% for key, value in visit_types %}
+                                    <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="visit_date" class="form-label">Visit Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="visit_date" name="visit_date" required>
+                            </div>
+                        </div>
+
+                        <!-- Topic -->
+                        <div class="mb-3">
+                            <label for="topic" class="form-label">Topic/Purpose <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="topic" name="topic" required
+                                placeholder="e.g., Business planning, Financial literacy training, Problem solving">
+                            <div class="form-text">What was the main topic or purpose of this visit?</div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Visit Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4"
+                                placeholder="Describe what was discussed, any issues identified, recommendations made, next steps..."></textarea>
+                            <div class="form-text">Optional: Record detailed notes about the visit</div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Log Visit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'training:log_phone_nudge' %}" class="btn btn-outline-info">
+                            <i class="fas fa-phone"></i> Log Phone Nudge
+                        </a>
+                        <a href="{% url 'training:create_mentoring_report' %}" class="btn btn-outline-success">
+                            <i class="fas fa-file-alt"></i> Create Report
+                        </a>
+                        <a href="{% url 'training:visit_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-list"></i> View All Visits
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guidelines -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-lightbulb"></i> Visit Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Visit Types:</h6>
+                    <ul class="small">
+                        <li><strong>On-site:</strong> Physical visit to household</li>
+                        <li><strong>Phone:</strong> Phone check-in or consultation</li>
+                        <li><strong>Virtual:</strong> Video call or online meeting</li>
+                    </ul>
+
+                    <h6>Good Visit Notes Include:</h6>
+                    <ul class="small">
+                        <li>Current business status</li>
+                        <li>Challenges discussed</li>
+                        <li>Advice or training provided</li>
+                        <li>Action items agreed upon</li>
+                        <li>Next visit schedule</li>
+                    </ul>
+
+                    <h6>Best Practices:</h6>
+                    <ul class="small">
+                        <li>Log visits promptly after completion</li>
+                        <li>Be specific about outcomes</li>
+                        <li>Note any follow-up required</li>
+                        <li>Record household feedback</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date to today
+    document.getElementById('visit_date').value = new Date().toISOString().split('T')[0];
+
+    // Auto-fill visit name based on household selection
+    const householdSelect = document.getElementById('household');
+    const nameInput = document.getElementById('name');
+    const visitTypeSelect = document.getElementById('visit_type');
+
+    function updateVisitName() {
+        const selectedHousehold = householdSelect.options[householdSelect.selectedIndex];
+        const visitType = visitTypeSelect.value;
+
+        if (selectedHousehold.value && visitType) {
+            const householdName = selectedHousehold.text.split(' - ')[0];
+            const visitTypeText = visitTypeSelect.options[visitTypeSelect.selectedIndex].text;
+            nameInput.value = `${visitTypeText} Visit - ${householdName}`;
+        }
+    }
+
+    householdSelect.addEventListener('change', updateVisitName);
+    visitTypeSelect.addEventListener('change', updateVisitName);
+
+    // Form validation
+    document.getElementById('visitForm').addEventListener('submit', function(e) {
+        const visitDate = new Date(document.getElementById('visit_date').value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (visitDate > today) {
+            e.preventDefault();
+            alert('Visit date cannot be in the future.');
+            return false;
+        }
+
+        // Check if visit date is too old (more than 30 days ago)
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        if (visitDate < thirtyDaysAgo) {
+            if (!confirm('This visit was more than 30 days ago. Are you sure you want to log it?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+
+    // Household search functionality
+    const householdSearchInput = document.createElement('input');
+    householdSearchInput.type = 'text';
+    householdSearchInput.className = 'form-control mb-2';
+    householdSearchInput.placeholder = 'Search households...';
+    householdSelect.parentNode.insertBefore(householdSearchInput, householdSelect);
+
+    householdSearchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const options = householdSelect.querySelectorAll('option');
+
+        options.forEach(option => {
+            if (option.value === '') return; // Skip empty option
+
+            const text = option.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

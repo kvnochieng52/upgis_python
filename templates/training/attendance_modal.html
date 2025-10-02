@@ -1,0 +1,279 @@
+<!-- Attendance Management Modal -->
+<div class="modal-header">
+    <h5 class="modal-title">Manage Attendance - {{ training.name }}</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+    <!-- Training Info -->
+    <div class="alert alert-info">
+        <strong>Training:</strong> {{ training.name }}<br>
+        <strong>Module:</strong> {{ training.module_id }}<br>
+        <strong>Status:</strong> {{ training.get_status_display }}<br>
+        <strong>Date:</strong> {{ training.start_date|default:"Not set" }}<br>
+        {% if training.location %}
+        <strong>Location:</strong> {{ training.location }}<br>
+        {% endif %}
+        {% if training.assigned_mentor %}
+        <strong>Assigned Mentor:</strong> {{ training.assigned_mentor.get_full_name }}<br>
+        {% endif %}
+        {% if training.max_households %}
+        <strong>Max Households:</strong> {{ training.max_households }}
+        {% endif %}
+    </div>
+
+    <!-- Mentor Instructions -->
+    {% if user.role == 'mentor' and training.assigned_mentor == user %}
+    <div class="alert alert-primary">
+        <h6><i class="fas fa-user-check"></i> Mentor Attendance Management</h6>
+        <p class="mb-0">As the assigned mentor for this training, you can mark attendance and manage household enrollment. Use the toggles below to mark each household as present or absent.</p>
+    </div>
+    {% endif %}
+
+    <!-- Add Household Section -->
+    {% if attendances.count == 0 %}
+    <div class="alert alert-warning border-0 shadow-sm" id="no-households-alert">
+        <div class="d-flex align-items-center mb-3">
+            <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                <i class="fas fa-users text-warning fs-4"></i>
+            </div>
+            <div>
+                <h6 class="mb-1">No households enrolled</h6>
+                <p class="mb-0 text-muted">This training session has no households enrolled yet.</p>
+            </div>
+        </div>
+        <div class="text-center">
+            <button type="button" class="btn btn-primary btn-lg px-4" id="add-first-household-btn">
+                <i class="fas fa-plus me-2"></i>Add First Household
+            </button>
+        </div>
+    </div>
+    {% else %}
+    <!-- Add More Households -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <button type="button" class="btn btn-success" id="add-household-btn">
+            <i class="fas fa-plus me-2"></i>Add Household
+        </button>
+        <span class="badge bg-light text-dark">
+            Current: {{ attendances.count }}/{{ training.max_households|default:"∞" }}
+        </span>
+    </div>
+    {% endif %}
+
+    <!-- Household Selection Form (Initially Hidden) -->
+    <div class="card mb-3" id="household-selection-form" style="display: none;">
+        <div class="card-header">
+            <h6 class="mb-0">Add Household to Training</h6>
+        </div>
+        <div class="card-body">
+            <form id="add-household-form">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-8">
+                        <label for="household-select" class="form-label">Select Household</label>
+                        <select class="form-select" id="household-select" name="household_id" required>
+                            <option value="">Choose a household...</option>
+                            <!-- Options will be loaded via AJAX -->
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="attendance-date" class="form-label">Training Date</label>
+                        <input type="date" class="form-control" id="attendance-date" name="training_date"
+                               value="{{ training.start_date|date:'Y-m-d' }}" required>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary" id="submit-add-household">
+                        <i class="fas fa-plus"></i> Add to Training
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancel-add-household">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attendance List -->
+    {% if attendances %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Household</th>
+                    <th>Village</th>
+                    <th>Training Date</th>
+                    <th>Attendance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="attendance-tbody">
+                {% for attendance in attendances %}
+                <tr data-attendance-id="{{ attendance.id }}">
+                    <td>
+                        <strong>{{ attendance.household.name }}</strong><br>
+                        <small class="text-muted">{{ attendance.household.phone_number }}</small>
+                    </td>
+                    <td>{{ attendance.household.village.name }}</td>
+                    <td>{{ attendance.training_date|date:"M d, Y" }}</td>
+                    <td>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input attendance-toggle" type="checkbox"
+                                   data-attendance-id="{{ attendance.id }}"
+                                   {% if attendance.attendance %}checked{% endif %}>
+                            <label class="form-check-label">
+                                {% if attendance.attendance %}Present{% else %}Absent{% endif %}
+                            </label>
+                        </div>
+                        {% if attendance.marked_by %}
+                        <small class="text-muted d-block">
+                            Marked by: {{ attendance.marked_by.get_full_name }}<br>
+                            {% if attendance.attendance_marked_at %}
+                            {{ attendance.attendance_marked_at|date:"M d, Y H:i" }}
+                            {% endif %}
+                        </small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-attendance"
+                                data-attendance-id="{{ attendance.id }}"
+                                title="Remove from training">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+    <button type="button" class="btn btn-primary" id="save-attendance">
+        <i class="fas fa-save"></i> Save Changes
+    </button>
+</div>
+
+<script>
+$(document).ready(function() {
+    const trainingId = {{ training.id }};
+
+    // Show add household form
+    $('#add-first-household-btn, #add-household-btn').click(function() {
+        console.log('Add household button clicked');
+        $('#household-selection-form').show();
+        loadAvailableHouseholds();
+    });
+
+    // Hide add household form
+    $('#cancel-add-household').click(function() {
+        console.log('Cancel add household clicked');
+        $('#household-selection-form').hide();
+        $('#add-household-form')[0].reset();
+    });
+
+    // Load available households
+    function loadAvailableHouseholds() {
+        console.log('Loading available households for training ID:', trainingId);
+
+        $.get('/training/' + trainingId + '/available-households/')
+            .done(function(data) {
+                console.log('Received household data:', data);
+                const select = $('#household-select');
+                select.empty();
+                select.append('<option value="">Choose a household...</option>');
+
+                if (data.success && data.households) {
+                    data.households.forEach(function(household) {
+                        select.append(`<option value="${household.id}">${household.name} - ${household.village}</option>`);
+                    });
+                    console.log('Added', data.households.length, 'households to dropdown');
+                } else {
+                    console.error('Failed to load households:', data);
+                    alert('Failed to load households: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.error('AJAX error loading households:', status, error);
+                alert('Error loading households. Please try again.');
+            });
+    }
+
+    // Add household to training
+    $('#add-household-form').submit(function(e) {
+        e.preventDefault();
+        console.log('Form submitted');
+
+        const formData = $(this).serialize();
+        console.log('Form data:', formData);
+
+        // Disable submit button to prevent double submission
+        const submitBtn = $('#submit-add-household');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Adding...');
+
+        $.post('/training/' + trainingId + '/add-household/', formData)
+            .done(function(data) {
+                console.log('Response received:', data);
+                if (data.success) {
+                    alert('Household added successfully!');
+                    // Reload the modal content
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.error('AJAX error adding household:', status, error, xhr.responseText);
+                alert('Error adding household. Please try again.');
+            })
+            .always(function() {
+                // Re-enable submit button
+                submitBtn.prop('disabled', false).html('<i class="fas fa-plus"></i> Add to Training');
+            });
+    });
+
+    // Toggle attendance
+    $('.attendance-toggle').change(function() {
+        const attendanceId = $(this).data('attendance-id');
+        const isPresent = $(this).is(':checked');
+
+        $.post('/training/attendance/' + attendanceId + '/toggle/', {
+            attendance: isPresent,
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+        }, function(data) {
+            if (data.success) {
+                // Update label
+                const label = $(this).next('label');
+                label.text(isPresent ? 'Present' : 'Absent');
+            }
+        }.bind(this));
+    });
+
+    // Remove attendance
+    $('.remove-attendance').click(function() {
+        if (confirm('Are you sure you want to remove this household from the training?')) {
+            const attendanceId = $(this).data('attendance-id');
+
+            $.ajax({
+                url: '/training/attendance/' + attendanceId + '/remove/',
+                type: 'DELETE',
+                headers: {
+                    'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                },
+                success: function(data) {
+                    if (data.success) {
+                        $(`tr[data-attendance-id="${attendanceId}"]`).remove();
+
+                        // Check if no households left
+                        if ($('#attendance-tbody tr').length === 0) {
+                            location.reload();
+                        }
+                    }
+                }
+            });
+        }
+    });
+});
+</script>

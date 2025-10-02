@@ -1,0 +1,1 @@
+Hello {{ household.head_name }}! Training reminder: {{ training.name }} on {{ date|date:"M d" }} at {{ location|default:"TBA" }}. Please attend. UPG System

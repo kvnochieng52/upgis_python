@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-file-alt"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <button class="btn btn-info btn-sm" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+            <a href="{% url 'training:mentoring_reports' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Reports
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Report Overview -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-info-circle"></i> Report Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Mentor:</strong> {{ report.mentor.get_full_name }}</p>
+                            <p><strong>Reporting Period:</strong> {{ report.get_reporting_period_display }}</p>
+                            <p><strong>Period:</strong> {{ report.period_start|date:"M d, Y" }} - {{ report.period_end|date:"M d, Y" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Submitted:</strong> {{ report.submitted_date|date:"M d, Y H:i" }}</p>
+                            <p><strong>Duration:</strong> {{ report.period_end|timesince:report.period_start }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-chart-bar"></i> Key Metrics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="metric-card bg-primary text-white">
+                                <h3>{{ report.households_visited }}</h3>
+                                <p>Households Visited</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card bg-success text-white">
+                                <h3>{{ report.phone_nudges_made }}</h3>
+                                <p>Phone Nudges</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card bg-info text-white">
+                                <h3>{{ report.trainings_conducted }}</h3>
+                                <p>Trainings Conducted</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="metric-card bg-warning text-white">
+                                <h3>{{ report.new_households_enrolled }}</h3>
+                                <p>New Enrollments</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Narrative Sections -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-tasks"></i> Key Activities</h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-content">
+                        {{ report.key_activities|linebreaks }}
+                    </div>
+                </div>
+            </div>
+
+            {% if report.challenges_faced %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-exclamation-triangle text-warning"></i> Challenges Faced</h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-content">
+                        {{ report.challenges_faced|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if report.successes_achieved %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-trophy text-success"></i> Successes Achieved</h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-content">
+                        {{ report.successes_achieved|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if report.next_period_plans %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-calendar-alt text-info"></i> Next Period Plans</h5>
+                </div>
+                <div class="card-body">
+                    <div class="report-content">
+                        {{ report.next_period_plans|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Activity Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-home"></i> Visits ({{ visits.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if visits %}
+                    <div class="activity-list">
+                        {% for visit in visits %}
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ visit.household.name }}</strong>
+                                <small class="text-muted">{{ visit.visit_date|date:"M d" }}</small>
+                            </div>
+                            <p class="mb-1 small">{{ visit.topic }}</p>
+                            <span class="badge bg-{% if visit.visit_type == 'on_site' %}success{% elif visit.visit_type == 'phone' %}info{% else %}warning{% endif %} mb-2">
+                                {{ visit.get_visit_type_display }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No visits recorded for this period.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-phone"></i> Phone Nudges ({{ phone_nudges.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if phone_nudges %}
+                    <div class="activity-list">
+                        {% for nudge in phone_nudges %}
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ nudge.household.name }}</strong>
+                                <small class="text-muted">{{ nudge.call_date|date:"M d" }}</small>
+                            </div>
+                            <p class="mb-1 small">{{ nudge.get_nudge_type_display }}</p>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-{% if nudge.successful_contact %}success{% else %}danger{% endif %}">
+                                    {% if nudge.successful_contact %}Connected{% else %}No Answer{% endif %}
+                                </span>
+                                <small class="text-muted">{{ nudge.duration_minutes }} min</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No phone nudges recorded for this period.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-chalkboard-teacher"></i> Trainings ({{ trainings.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if trainings %}
+                    <div class="activity-list">
+                        {% for training in trainings %}
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ training.name }}</strong>
+                                <small class="text-muted">{{ training.start_date|date:"M d" }}</small>
+                            </div>
+                            <p class="mb-1 small">{{ training.description|truncatechars:60 }}</p>
+                            <span class="badge bg-{% if training.status == 'completed' %}success{% elif training.status == 'active' %}info{% else %}secondary{% endif %}">
+                                {{ training.get_status_display }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No trainings conducted for this period.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.metric-card {
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.metric-card h3 {
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+
+.metric-card p {
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.report-content {
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.activity-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    border-bottom: 1px solid #eee;
+    padding: 10px 0;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+@media print {
+    .btn-group {
+        display: none !important;
+    }
+
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+    }
+
+    .metric-card {
+        background-color: #f8f9fa !important;
+        color: #333 !important;
+    }
+}
+</style>
+{% endblock %}
