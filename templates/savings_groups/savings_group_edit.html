@@ -46,10 +46,36 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="target_members" class="form-label">Target Number of Members</label>
+                            <input type="number" class="form-control" id="target_members" name="target_members" min="5" max="30" value="{{ savings_group.target_members }}">
+                            <div class="form-text">Recommended: 15-25 members</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="savings_frequency" class="form-label">Savings Frequency <span class="text-danger">*</span></label>
+                            <select class="form-select" id="savings_frequency" name="savings_frequency" required>
+                                <option value="weekly" {% if savings_group.savings_frequency == 'weekly' %}selected{% endif %}>Weekly</option>
+                                <option value="biweekly" {% if savings_group.savings_frequency == 'biweekly' %}selected{% endif %}>Bi-Weekly</option>
+                                <option value="monthly" {% if savings_group.savings_frequency == 'monthly' %}selected{% endif %}>Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
-                        <label for="target_members" class="form-label">Target Number of Members</label>
-                        <input type="number" class="form-control" id="target_members" name="target_members" min="5" max="30" value="{{ savings_group.target_members }}">
-                        <div class="form-text">Recommended: 15-25 members for optimal group dynamics</div>
+                        <label for="formation_date" class="form-label">Formation Date</label>
+                        <input type="date" class="form-control" id="formation_date" name="formation_date" value="{{ savings_group.formation_date|date:'Y-m-d' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meeting_day" class="form-label">Meeting Day</label>
+                        <input type="text" class="form-control" id="meeting_day" name="meeting_day" value="{{ savings_group.meeting_day }}" placeholder="e.g., Every Tuesday">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="meeting_location" class="form-label">Meeting Location</label>
+                        <input type="text" class="form-control" id="meeting_location" name="meeting_location" value="{{ savings_group.meeting_location }}" placeholder="e.g., Community Center">
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">

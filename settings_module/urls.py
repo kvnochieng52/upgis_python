@@ -27,4 +27,6 @@ urlpatterns = [
     # System Alerts
     path('alerts/', views.system_alerts, name='system_alerts'),
     path('alerts/create/', views.create_alert, name='create_alert'),
+    path('alerts/<int:alert_id>/toggle/', views.toggle_alert, name='toggle_alert'),
+    path('alerts/<int:alert_id>/delete/', views.delete_alert, name='delete_alert'),
 ]

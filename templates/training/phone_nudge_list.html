@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-phone"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'training:log_phone_nudge' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-plus"></i> Log New Phone Nudge
+            </a>
+            <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3>{{ total_calls }}</h3>
+                    <p class="mb-0">Total Phone Nudges</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3>{{ successful_calls }}</h3>
+                    <p class="mb-0">Successful Contacts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3>{{ avg_duration|floatformat:1 }} min</h3>
+                    <p class="mb-0">Average Call Duration</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5><i class="fas fa-filter"></i> Filter Phone Nudges</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="household" class="form-label">Household</label>
+                    <select class="form-select" id="household" name="household">
+                        <option value="">All Households</option>
+                        {% for household in households %}
+                        <option value="{{ household.id }}" {% if current_filters.household == household.id|stringformat:"s" %}selected{% endif %}>
+                            {{ household.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {% if user_role != 'mentor' %}
+                <div class="col-md-3">
+                    <label for="mentor" class="form-label">Mentor</label>
+                    <select class="form-select" id="mentor" name="mentor">
+                        <option value="">All Mentors</option>
+                        {% for mentor in mentors %}
+                        <option value="{{ mentor.id }}" {% if current_filters.mentor == mentor.id|stringformat:"s" %}selected{% endif %}>
+                            {{ mentor.get_full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <div class="col-md-2">
+                    <label for="nudge_type" class="form-label">Nudge Type</label>
+                    <select class="form-select" id="nudge_type" name="nudge_type">
+                        <option value="">All Types</option>
+                        {% for key, value in nudge_types %}
+                        <option value="{{ key }}" {% if current_filters.nudge_type == key %}selected{% endif %}>
+                            {{ value }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="contact_status" class="form-label">Contact Status</label>
+                    <select class="form-select" id="contact_status" name="contact_status">
+                        <option value="">All</option>
+                        <option value="successful" {% if current_filters.contact_status == 'successful' %}selected{% endif %}>Successful</option>
+                        <option value="unsuccessful" {% if current_filters.contact_status == 'unsuccessful' %}selected{% endif %}>Unsuccessful</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Date From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ current_filters.date_from }}">
+                </div>
+
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Date To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ current_filters.date_to }}">
+                </div>
+
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'training:phone_nudge_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Phone Nudges Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-list"></i> Phone Nudges History</h5>
+        </div>
+        <div class="card-body">
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Household</th>
+                            {% if user_role != 'mentor' %}
+                            <th>Mentor</th>
+                            {% endif %}
+                            <th>Nudge Type</th>
+                            <th>Duration</th>
+                            <th>Contact Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for nudge in page_obj %}
+                        <tr>
+                            <td>
+                                <strong>{{ nudge.call_date|date:"M d, Y" }}</strong><br>
+                                <small class="text-muted">{{ nudge.call_date|time:"h:i A" }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ nudge.household.name }}</strong><br>
+                                <small class="text-muted">{{ nudge.household.village.name }}</small>
+                                {% if nudge.household.phone_number %}
+                                <br><small><i class="fas fa-phone"></i> {{ nudge.household.phone_number }}</small>
+                                {% endif %}
+                            </td>
+                            {% if user_role != 'mentor' %}
+                            <td>{{ nudge.mentor.get_full_name }}</td>
+                            {% endif %}
+                            <td>
+                                <span class="badge bg-info">{{ nudge.get_nudge_type_display }}</span>
+                            </td>
+                            <td>{{ nudge.duration_minutes }} min</td>
+                            <td>
+                                {% if nudge.successful_contact %}
+                                <span class="badge bg-success"><i class="fas fa-check"></i> Successful</span>
+                                {% else %}
+                                <span class="badge bg-warning"><i class="fas fa-times"></i> No Contact</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if nudge.notes %}
+                                <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#notes-{{ nudge.id }}" aria-expanded="false">
+                                    <i class="fas fa-eye"></i> View Notes
+                                </button>
+                                <div class="collapse mt-2" id="notes-{{ nudge.id }}">
+                                    <div class="card card-body">
+                                        {{ nudge.notes|linebreaks }}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <small class="text-muted">No notes</small>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if user_role != 'mentor' %}7{% else %}6{% endif %}" class="text-center text-muted">
+                                No phone nudges found. <a href="{% url 'training:log_phone_nudge' %}">Log your first phone nudge</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Phone nudges pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if current_filters.household %}&household={{ current_filters.household }}{% endif %}{% if current_filters.mentor %}&mentor={{ current_filters.mentor }}{% endif %}{% if current_filters.nudge_type %}&nudge_type={{ current_filters.nudge_type }}{% endif %}{% if current_filters.contact_status %}&contact_status={{ current_filters.contact_status }}{% endif %}{% if current_filters.date_from %}&date_from={{ current_filters.date_from }}{% endif %}{% if current_filters.date_to %}&date_to={{ current_filters.date_to }}{% endif %}">
+                            &laquo; First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_filters.household %}&household={{ current_filters.household }}{% endif %}{% if current_filters.mentor %}&mentor={{ current_filters.mentor }}{% endif %}{% if current_filters.nudge_type %}&nudge_type={{ current_filters.nudge_type }}{% endif %}{% if current_filters.contact_status %}&contact_status={{ current_filters.contact_status }}{% endif %}{% if current_filters.date_from %}&date_from={{ current_filters.date_from }}{% endif %}{% if current_filters.date_to %}&date_to={{ current_filters.date_to }}{% endif %}">
+                            Previous
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_filters.household %}&household={{ current_filters.household }}{% endif %}{% if current_filters.mentor %}&mentor={{ current_filters.mentor }}{% endif %}{% if current_filters.nudge_type %}&nudge_type={{ current_filters.nudge_type }}{% endif %}{% if current_filters.contact_status %}&contact_status={{ current_filters.contact_status }}{% endif %}{% if current_filters.date_from %}&date_from={{ current_filters.date_from }}{% endif %}{% if current_filters.date_to %}&date_to={{ current_filters.date_to }}{% endif %}">
+                            Next
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_filters.household %}&household={{ current_filters.household }}{% endif %}{% if current_filters.mentor %}&mentor={{ current_filters.mentor }}{% endif %}{% if current_filters.nudge_type %}&nudge_type={{ current_filters.nudge_type }}{% endif %}{% if current_filters.contact_status %}&contact_status={{ current_filters.contact_status }}{% endif %}{% if current_filters.date_from %}&date_from={{ current_filters.date_from }}{% endif %}{% if current_filters.date_to %}&date_to={{ current_filters.date_to }}{% endif %}">
+                            Last &raquo;
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

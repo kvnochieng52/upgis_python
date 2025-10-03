@@ -41,6 +41,83 @@
             background-color: #007bff !important;
             color: white !important;
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 991.98px) {
+            .content-wrapper {
+                padding: 10px;
+            }
+
+            .navbar-brand {
+                font-size: 1rem;
+            }
+
+            .navbar-collapse {
+                background-color: #343a40;
+                padding: 10px;
+                margin-top: 10px;
+                border-radius: 5px;
+            }
+
+            .navbar-nav .nav-link {
+                padding: 10px 15px;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
+
+            .navbar-nav .nav-link:last-child {
+                border-bottom: none;
+            }
+
+            /* Make tables responsive */
+            .table-responsive {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            /* Stack cards vertically on mobile */
+            .row > [class*='col-'] {
+                margin-bottom: 15px;
+            }
+
+            /* Adjust button sizes for mobile */
+            .btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.875rem;
+            }
+
+            /* Make stat cards more compact */
+            .stat-card {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+        }
+
+        /* Extra small devices (phones, less than 576px) */
+        @media (max-width: 575.98px) {
+            .navbar-brand i {
+                display: none;
+            }
+
+            h1, h2, h3 {
+                font-size: 1.5rem;
+            }
+
+            h4, h5 {
+                font-size: 1.25rem;
+            }
+        }
+
+        /* Ensure tables are always scrollable on small screens */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
     </style>
 
     {% block extra_css %}{% endblock %}
@@ -54,16 +131,121 @@
             </a>
 
             {% if user.is_authenticated %}
-            <div class="navbar-nav ms-auto">
-                <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user"></i> {{ user.get_full_name|default:user.username }}
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">Profile</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Logout</a></li>
-                    </ul>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 d-lg-none">
+                    <!-- Mobile Menu Items -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard:dashboard' %}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+
+                    {% if perms.can_view_programs %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'programs:program_list' %}">
+                            <i class="fas fa-project-diagram"></i> Programs
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if perms.can_view_households %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'households:household_list' %}">
+                            <i class="fas fa-home"></i> Households
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if perms.can_view_business_groups %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'business_groups:group_list' %}">
+                            <i class="fas fa-users"></i> Business Groups
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if perms.can_view_savings_groups %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'savings_groups:savings_list' %}">
+                            <i class="fas fa-piggy-bank"></i> Savings Groups
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if perms.can_view_surveys %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'surveys:survey_list' %}">
+                            <i class="fas fa-clipboard-list"></i> Surveys & Forms
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if perms.can_view_training %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'training:training_list' %}">
+                            <i class="fas fa-chalkboard-teacher"></i> Training
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if perms.can_view_grants %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'grants:grants_dashboard' %}">
+                            <i class="fas fa-money-bill-wave"></i> Grants
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if perms.can_view_reports %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'reports:report_list' %}">
+                            <i class="fas fa-chart-bar"></i> Reports
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if perms.can_view_settings %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'settings:settings_dashboard' %}">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                    </li>
+                    {% if perms.can_import_esr %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:esr_import_list' %}">
+                            <i class="fas fa-file-import"></i> ESR Import
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:bm_cycle_list' %}">
+                            <i class="fas fa-calendar-alt"></i> BM Cycles
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:mentor_villages_list' %}">
+                            <i class="fas fa-map-marked-alt"></i> Mentor Assignments
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <div class="navbar-nav ms-auto">
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-user"></i> Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'settings:user_settings' %}"><i class="fas fa-cog"></i> My Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'accounts:logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
             {% endif %}

@@ -216,8 +216,8 @@ def create_training(request):
     """Create a new training session"""
     user = request.user
 
-    # Check permissions
-    if not (user.is_superuser or user.role in ['ict_admin', 'me_staff', 'field_associate']):
+    # Check permissions - mentors can now create/schedule trainings
+    if not (user.is_superuser or user.role in ['ict_admin', 'me_staff', 'field_associate', 'mentor']):
         return JsonResponse({'success': False, 'message': 'Permission denied'})
 
     try:
@@ -324,8 +324,9 @@ def edit_training(request, training_id):
     training = get_object_or_404(Training, id=training_id)
     user = request.user
 
-    # Check permissions
-    if not (user.is_superuser or user.role in ['ict_admin', 'me_staff', 'field_associate']):
+    # Check permissions - mentors can edit trainings they're assigned to
+    if not (user.is_superuser or user.role in ['ict_admin', 'me_staff', 'field_associate'] or
+            (user.role == 'mentor' and training.assigned_mentor == user)):
         return JsonResponse({'success': False, 'message': 'Permission denied'})
 
     if request.method == 'GET':
@@ -548,23 +549,48 @@ def add_household_to_training(request, training_id):
             return JsonResponse({'success': False, 'message': 'Training is at maximum capacity'})
 
         # Parse training date
-        from datetime import datetime
+        from datetime import datetime, timedelta
         training_date_obj = datetime.strptime(training_date, '%Y-%m-%d').date()
 
-        # Create attendance record
+        # Create attendance record for the selected date
         attendance = TrainingAttendance.objects.create(
             training=training,
             household=household,
             training_date=training_date_obj,
-            attendance=True,  # Default to present
+            attendance=True,  # Default to present for current date
             marked_by=user,
             attendance_marked_at=timezone.now()
         )
 
+        # Automatically mark absent for all previous training dates
+        absent_records_created = 0
+        if training.start_date and training_date_obj > training.start_date:
+            current_date = training.start_date
+            while current_date < training_date_obj:
+                # Only create if within training period
+                if not training.end_date or current_date <= training.end_date:
+                    # Check if attendance record already exists for this date
+                    if not training.attendances.filter(household=household, training_date=current_date).exists():
+                        TrainingAttendance.objects.create(
+                            training=training,
+                            household=household,
+                            training_date=current_date,
+                            attendance=False,  # Mark as absent for past dates
+                            marked_by=user,
+                            attendance_marked_at=timezone.now()
+                        )
+                        absent_records_created += 1
+                current_date += timedelta(days=1)
+
+        message = f'Household "{household.name}" added to training successfully'
+        if absent_records_created > 0:
+            message += f'. Automatically marked absent for {absent_records_created} previous date(s).'
+
         return JsonResponse({
             'success': True,
-            'message': f'Household "{household.name}" added to training successfully',
-            'attendance_id': attendance.id
+            'message': message,
+            'attendance_id': attendance.id,
+            'absent_records_created': absent_records_created
         })
 
     except Exception as e:

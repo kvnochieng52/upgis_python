@@ -30,13 +30,12 @@
                             <label for="grant_type" class="form-label">Grant Type <span class="text-danger">*</span></label>
                             <select class="form-select" id="grant_type" name="grant_type" required>
                                 <option value="">Select Grant Type</option>
-                                <option value="seed_business">Seed Business Grant</option>
-                                <option value="performance_recognition">Performance Recognition Grant</option>
-                                <option value="livelihood">Livelihood Grant</option>
-                                <option value="emergency">Emergency Grant</option>
-                                <option value="education">Education Support Grant</option>
-                                <option value="housing">Housing Improvement Grant</option>
-                                <option value="other">Other</option>
+                                <option value="startup" {% if preselected_grant_type == 'startup' %}selected{% endif %}>Startup Grant</option>
+                                <option value="expansion" {% if preselected_grant_type == 'expansion' %}selected{% endif %}>Expansion Grant</option>
+                                <option value="equipment" {% if preselected_grant_type == 'equipment' %}selected{% endif %}>Equipment Grant</option>
+                                <option value="training" {% if preselected_grant_type == 'training' %}selected{% endif %}>Training Grant</option>
+                                <option value="emergency" {% if preselected_grant_type == 'emergency' %}selected{% endif %}>Emergency Grant</option>
+                                <option value="other" {% if preselected_grant_type == 'other' %}selected{% endif %}>Other</option>
                             </select>
                         </div>
 

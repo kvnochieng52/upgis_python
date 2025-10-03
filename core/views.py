@@ -560,13 +560,15 @@ def bm_cycle_create(request):
         except Exception as e:
             messages.error(request, f'Error creating BM Cycle: {str(e)}')
 
-    # Get mentors for dropdown
+    # Get mentors and field associates for dropdowns
     from .models import Mentor
     mentors = Mentor.objects.all().order_by('first_name', 'last_name')
+    field_associates = User.objects.filter(role='field_associate').order_by('first_name', 'last_name')
 
     context = {
         'page_title': 'Create BM Cycle',
         'mentors': mentors,
+        'field_associates': field_associates,
         'cycle': None,
     }
     return render(request, 'core/bm_cycle_form.html', context)
@@ -602,14 +604,16 @@ def bm_cycle_edit(request, cycle_id):
         except Exception as e:
             messages.error(request, f'Error updating BM Cycle: {str(e)}')
 
-    # Get mentors for dropdown
+    # Get mentors and field associates for dropdowns
     from .models import Mentor
     mentors = Mentor.objects.all().order_by('first_name', 'last_name')
+    field_associates = User.objects.filter(role='field_associate').order_by('first_name', 'last_name')
 
     context = {
         'page_title': 'Edit BM Cycle',
         'cycle': cycle,
         'mentors': mentors,
+        'field_associates': field_associates,
     }
     return render(request, 'core/bm_cycle_form.html', context)
 

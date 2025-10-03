@@ -37,10 +37,31 @@ def mentoring_dashboard(request):
     # Filter data based on user role
     if user_role == 'mentor':
         mentor_filter = Q(mentor=request.user)
-        visits = MentoringVisit.objects.filter(mentor=request.user)
-        phone_nudges = PhoneNudge.objects.filter(mentor=request.user)
-        mentoring_reports = MentoringReport.objects.filter(mentor=request.user)
-        trainings = Training.objects.filter(assigned_mentor=request.user)
+        # Filter by assigned villages to only show related households
+        if hasattr(request.user, 'profile') and request.user.profile:
+            assigned_villages = request.user.profile.assigned_villages.all()
+            visits = MentoringVisit.objects.filter(
+                mentor=request.user,
+                household__village__in=assigned_villages
+            )
+            phone_nudges = PhoneNudge.objects.filter(
+                mentor=request.user,
+                household__village__in=assigned_villages
+            )
+            # MentoringReport doesn't have household field - filter by mentor only
+            mentoring_reports = MentoringReport.objects.filter(
+                mentor=request.user
+            )
+            # Training doesn't have village field - filter by assigned mentor only
+            trainings = Training.objects.filter(
+                assigned_mentor=request.user
+            )
+        else:
+            # No profile or assigned villages - show no data
+            visits = MentoringVisit.objects.none()
+            phone_nudges = PhoneNudge.objects.none()
+            mentoring_reports = MentoringReport.objects.filter(mentor=request.user)
+            trainings = Training.objects.none()
     else:
         mentor_filter = Q()
         visits = MentoringVisit.objects.all()
@@ -59,9 +80,9 @@ def mentoring_dashboard(request):
         'active_households': visits.filter(visit_date__gte=current_month).values('household').distinct().count(),
     }
 
-    # Recent activities
-    recent_visits = visits.order_by('-visit_date')[:10]
-    recent_phone_nudges = phone_nudges.order_by('-call_date')[:10]
+    # Recent activities - order by creation time to show most recently logged items
+    recent_visits = visits.order_by('-created_at')[:10]
+    recent_phone_nudges = phone_nudges.order_by('-created_at')[:10]
     recent_reports = mentoring_reports.order_by('-submitted_date')[:5]
 
     # Mentor performance overview
@@ -92,6 +113,23 @@ def mentoring_dashboard(request):
         count=Count('id')
     ).order_by('-count')
 
+    # Available grants for mentors to apply on behalf of households
+    available_grants = []
+    if user_role == 'mentor':
+        from programs.models import Program
+        from upg_grants.models import HouseholdGrantApplication
+
+        # Get all active programs as available grant opportunities
+        active_programs = Program.objects.filter(status='active')
+
+        # Get grant type choices
+        grant_types = HouseholdGrantApplication.GRANT_TYPE_CHOICES
+
+        available_grants = {
+            'programs': active_programs,
+            'grant_types': grant_types,
+        }
+
     context = {
         'page_title': 'Mentoring Dashboard',
         'monthly_stats': monthly_stats,
@@ -103,6 +141,7 @@ def mentoring_dashboard(request):
         'nudge_type_stats': nudge_type_stats,
         'user_role': user_role,
         'current_month': current_month.strftime('%B %Y'),
+        'available_grants': available_grants,
     }
 
     return render(request, 'training/mentoring_dashboard.html', context)
@@ -481,11 +520,12 @@ def log_visit(request):
                 notes=notes,
             )
 
-            messages.success(request, f'Visit to {household.name} logged successfully.')
+            messages.success(request, f'Visit "{name}" to {household.name} logged successfully on {visit_date}.')
             return redirect('training:mentoring_dashboard')
 
         except Exception as e:
             messages.error(request, f'Error logging visit: {str(e)}')
+            # Continue to render the form with the error message
 
     # Get households for the mentor (if they have assigned villages)
     households = Household.objects.all().order_by('name')
@@ -522,14 +562,24 @@ def log_phone_nudge(request):
             call_date = request.POST.get('call_date')
             call_time = request.POST.get('call_time')
             duration_minutes = request.POST.get('duration_minutes')
+            duration_seconds = request.POST.get('duration_seconds', '0')  # For auto-tracked duration
             notes = request.POST.get('notes', '')
             successful_contact = request.POST.get('successful_contact') == 'on'
 
             # Validate household
             household = get_object_or_404(Household, id=household_id)
 
-            # Convert datetime
-            call_datetime = datetime.strptime(f'{call_date} {call_time}', '%Y-%m-%d %H:%M')
+            # Convert datetime to timezone-aware
+            naive_datetime = datetime.strptime(f'{call_date} {call_time}', '%Y-%m-%d %H:%M')
+            call_datetime = timezone.make_aware(naive_datetime, timezone.get_current_timezone())
+
+            # Calculate duration in minutes (use seconds if provided)
+            if duration_seconds and int(duration_seconds) > 0:
+                calculated_duration = int(duration_seconds) // 60
+                if calculated_duration == 0 and int(duration_seconds) > 0:
+                    calculated_duration = 1  # Minimum 1 minute for calls with duration
+            else:
+                calculated_duration = int(duration_minutes) if duration_minutes else 0
 
             # Create the phone nudge
             phone_nudge = PhoneNudge.objects.create(
@@ -537,7 +587,7 @@ def log_phone_nudge(request):
                 mentor=request.user,
                 nudge_type=nudge_type,
                 call_date=call_datetime,
-                duration_minutes=int(duration_minutes),
+                duration_minutes=calculated_duration,
                 notes=notes,
                 successful_contact=successful_contact,
             )
@@ -629,3 +679,82 @@ def visit_list(request):
     }
 
     return render(request, 'training/visit_list.html', context)
+
+
+@login_required
+def phone_nudge_list(request):
+    """View all phone nudges with filtering options"""
+    # Check permissions
+    user_role = getattr(request.user, 'role', None)
+    if not (request.user.is_superuser or user_role in ['ict_admin', 'me_staff', 'field_associate', 'mentor']):
+        messages.error(request, 'You do not have permission to view phone nudges.')
+        return redirect('dashboard:dashboard')
+
+    # Filter phone nudges based on user role
+    if user_role == 'mentor':
+        phone_nudges = PhoneNudge.objects.filter(mentor=request.user)
+    else:
+        phone_nudges = PhoneNudge.objects.all()
+
+    # Apply filters
+    household_filter = request.GET.get('household')
+    mentor_filter = request.GET.get('mentor')
+    nudge_type_filter = request.GET.get('nudge_type')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    contact_status = request.GET.get('contact_status')
+
+    if household_filter:
+        phone_nudges = phone_nudges.filter(household_id=household_filter)
+    if mentor_filter:
+        phone_nudges = phone_nudges.filter(mentor_id=mentor_filter)
+    if nudge_type_filter:
+        phone_nudges = phone_nudges.filter(nudge_type=nudge_type_filter)
+    if date_from:
+        phone_nudges = phone_nudges.filter(call_date__gte=date_from)
+    if date_to:
+        phone_nudges = phone_nudges.filter(call_date__lte=date_to)
+    if contact_status == 'successful':
+        phone_nudges = phone_nudges.filter(successful_contact=True)
+    elif contact_status == 'unsuccessful':
+        phone_nudges = phone_nudges.filter(successful_contact=False)
+
+    phone_nudges = phone_nudges.order_by('-call_date').select_related('household', 'mentor')
+
+    # Pagination
+    paginator = Paginator(phone_nudges, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get filter options
+    households = Household.objects.all().order_by('name')
+    mentors = []
+    if user_role != 'mentor':
+        mentors = User.objects.filter(role='mentor').order_by('first_name', 'last_name')
+
+    # Calculate statistics
+    total_calls = phone_nudges.count()
+    successful_calls = phone_nudges.filter(successful_contact=True).count()
+    avg_duration = phone_nudges.aggregate(avg_duration=Avg('duration_minutes'))['avg_duration'] or 0
+
+    context = {
+        'page_title': 'Phone Nudges',
+        'page_obj': page_obj,
+        'households': households,
+        'mentors': mentors,
+        'nudge_types': PhoneNudge.NUDGE_TYPE_CHOICES,
+        'user_role': user_role,
+        'total_calls': total_calls,
+        'successful_calls': successful_calls,
+        'avg_duration': avg_duration,
+        'current_filters': {
+            'household': household_filter,
+            'mentor': mentor_filter,
+            'nudge_type': nudge_type_filter,
+            'date_from': date_from,
+            'date_to': date_to,
+            'contact_status': contact_status,
+        }
+    }
+
+    return render(request, 'training/phone_nudge_list.html', context)

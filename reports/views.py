@@ -13,6 +13,8 @@ import csv
 @login_required
 def report_list(request):
     """Reports dashboard view"""
+    user = request.user
+
     # Generate some basic statistics for reports
     reports_data = {
         'total_households': Household.objects.count(),
@@ -21,8 +23,20 @@ def report_list(request):
         'total_business_groups': BusinessGroup.objects.count(),
     }
 
+    # Mentor logs statistics - visible to M&E, Admin, Field Associates
+    mentor_logs_visible = user.is_superuser or user.role in ['me_staff', 'ict_admin', 'field_associate', 'mentor']
+    if mentor_logs_visible:
+        from datetime import timedelta
+        thirty_days_ago = timezone.now().date() - timedelta(days=30)
+
+        reports_data['total_house_visits'] = MentoringVisit.objects.count()
+        reports_data['total_phone_calls'] = PhoneNudge.objects.count()
+        reports_data['recent_house_visits'] = MentoringVisit.objects.filter(visit_date__gte=thirty_days_ago).count()
+        reports_data['recent_phone_calls'] = PhoneNudge.objects.filter(call_date__gte=thirty_days_ago).count()
+
     context = {
         'reports_data': reports_data,
+        'mentor_logs_visible': mentor_logs_visible,
         'page_title': 'Reports & Analytics',
     }
 
@@ -51,7 +65,7 @@ def download_household_report(request):
             household.village.name if household.village else '',
             '',  # parish not available in current model
             household.village.subcounty if household.village else '',
-            household.village.country if household.village else '',
+            household.village.country if household.village else '',  # Country field exists
             getattr(household, 'members_count', household.members.count()),
             household.members.count(),
             program_participants,
@@ -69,19 +83,19 @@ def download_ppi_report(request):
 
     writer = csv.writer(response)
     writer.writerow([
-        'Household Name', 'Village', 'PPI Score', 'Poverty Probability (%)',
-        'Assessment Date', 'Surveyor', 'Status'
+        'Household Name', 'Village', 'Subcounty', 'PPI Name', 'Eligibility Score',
+        'Assessment Date', 'Created At'
     ])
 
-    for ppi in PPI.objects.select_related('household', 'household__village', 'surveyor'):
+    for ppi in PPI.objects.select_related('household', 'household__village', 'household__village__subcounty_obj').order_by('-assessment_date'):
         writer.writerow([
             ppi.household.name,
             ppi.household.village.name if ppi.household.village else '',
-            ppi.score,
-            ppi.poverty_probability,
+            ppi.household.village.subcounty_obj.name if ppi.household.village and ppi.household.village.subcounty_obj else '',
+            ppi.name or 'PPI Assessment',
+            ppi.eligibility_score,
             ppi.assessment_date.strftime('%Y-%m-%d'),
-            ppi.surveyor.get_full_name() if ppi.surveyor else '',
-            'Valid' if ppi.score >= 0 else 'Invalid'
+            ppi.created_at.strftime('%Y-%m-%d %H:%M:%S') if ppi.created_at else ''
         ])
 
     return response
@@ -171,36 +185,42 @@ def download_grants_report(request):
 
     writer = csv.writer(response)
     writer.writerow([
-        'Grant Type', 'Business Group', 'Business Type', 'Grant Amount (KES)',
-        'Funding Status', 'Funded Date', 'Leader', 'Treasurer', 'Secretary'
+        'Grant Type', 'Applicant Name', 'Applicant Type', 'Business Type', 'Grant Amount (KES)',
+        'Status', 'Disbursement Status', 'Disbursement Date', 'Application Date'
     ])
 
     # SB Grants
-    for grant in SBGrant.objects.select_related('business_group'):
+    for grant in SBGrant.objects.select_related('business_group', 'household', 'savings_group'):
+        # Get business type from business_group if available
+        business_type = grant.business_group.get_business_type_display() if grant.business_group else 'N/A'
+
         writer.writerow([
             'SB Grant',
-            grant.business_group.name,
-            grant.business_type,
+            grant.get_applicant_name(),
+            grant.get_applicant_type().replace('_', ' ').title(),
+            business_type,
             f"{grant.get_grant_amount():,.2f}",
             grant.get_status_display(),
+            grant.get_disbursement_status_display(),
             grant.disbursement_date.strftime('%Y-%m-%d') if grant.disbursement_date else '',
-            grant.leader_name,
-            grant.treasurer_name,
-            grant.secretary_name
+            grant.application_date.strftime('%Y-%m-%d') if grant.application_date else ''
         ])
 
     # PR Grants
-    for grant in PRGrant.objects.select_related('business_group'):
+    for grant in PRGrant.objects.select_related('business_group', 'household', 'savings_group'):
+        # Get business type from business_group if available
+        business_type = grant.business_group.get_business_type_display() if grant.business_group else 'N/A'
+
         writer.writerow([
             'PR Grant',
-            grant.business_group.name,
-            grant.business_type,
-            f"{grant.get_grant_amount():,.2f}",
+            grant.get_applicant_name(),
+            grant.get_applicant_type().replace('_', ' ').title(),
+            business_type,
+            f"{grant.grant_amount:,.2f}",
             grant.get_status_display(),
+            'N/A',  # PR Grants don't have disbursement_status field
             grant.disbursement_date.strftime('%Y-%m-%d') if grant.disbursement_date else '',
-            grant.leader_name,
-            grant.treasurer_name,
-            grant.secretary_name
+            grant.application_date.strftime('%Y-%m-%d') if grant.application_date else ''
         ])
 
     return response
@@ -213,18 +233,19 @@ def download_training_report(request):
 
     writer = csv.writer(response)
     writer.writerow([
-        'Training Title', 'Module', 'Status', 'Start Date', 'End Date',
+        'Training Name', 'Module ID', 'BM Cycle', 'Status', 'Start Date', 'End Date',
         'Enrolled Households', 'Completed Households', 'Completion Rate (%)'
     ])
 
-    for training in Training.objects.prefetch_related('household_enrollments'):
-        enrolled_count = training.household_enrollments.count()
-        completed_count = training.household_enrollments.filter(status='completed').count()
+    for training in Training.objects.select_related('bm_cycle').prefetch_related('enrolled_households'):
+        enrolled_count = training.enrolled_households.count()
+        completed_count = training.enrolled_households.filter(enrollment_status='completed').count()
         completion_rate = (completed_count / enrolled_count * 100) if enrolled_count > 0 else 0
 
         writer.writerow([
-            training.title,
-            training.module,
+            training.name,
+            training.module_id,
+            training.bm_cycle.bm_cycle_name if training.bm_cycle else 'N/A',
             training.get_status_display(),
             training.start_date.strftime('%Y-%m-%d') if training.start_date else '',
             training.end_date.strftime('%Y-%m-%d') if training.end_date else '',
@@ -237,42 +258,99 @@ def download_training_report(request):
 
 @login_required
 def download_mentoring_report(request):
-    """Download mentoring activities report as CSV"""
+    """Download mentoring activities report as CSV - accessible by M&E, Admin, Field Associates"""
+    user = request.user
+
+    # Check permissions - M&E, Admin, Field Associates, and Mentors can access
+    if not (user.is_superuser or user.role in ['me_staff', 'ict_admin', 'field_associate', 'mentor']):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="error.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Error', 'You do not have permission to access this report'])
+        return response
+
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="mentoring_report_{timezone.now().strftime("%Y%m%d")}.csv"'
+    response['Content-Disposition'] = f'attachment; filename="mentoring_full_log_{timezone.now().strftime("%Y%m%d_%H%M%S")}.csv"'
 
     writer = csv.writer(response)
     writer.writerow([
-        'Activity Type', 'Household', 'Village', 'Mentor', 'Date',
-        'Topic/Type', 'Duration', 'Successful Contact', 'Notes'
+        'Activity Type', 'Household', 'Village', 'Subcounty', 'Mentor', 'Mentor Email',
+        'Date', 'Time', 'Topic/Type', 'Duration (minutes)', 'Successful Contact',
+        'Notes', 'Created At', 'Record ID'
     ])
 
+    # Filter based on user role
+    visits_query = MentoringVisit.objects.select_related('household', 'household__village', 'household__village__subcounty_obj', 'mentor')
+    nudges_query = PhoneNudge.objects.select_related('household', 'household__village', 'household__village__subcounty_obj', 'mentor')
+
+    # Mentors only see their own logs (unless they're superuser/admin)
+    if user.role == 'mentor' and not user.is_superuser:
+        visits_query = visits_query.filter(mentor=user)
+        nudges_query = nudges_query.filter(mentor=user)
+
+    # Apply date filters if provided
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    mentor_id = request.GET.get('mentor_id')
+
+    if date_from:
+        visits_query = visits_query.filter(visit_date__gte=date_from)
+        nudges_query = nudges_query.filter(call_date__gte=date_from)
+
+    if date_to:
+        visits_query = visits_query.filter(visit_date__lte=date_to)
+        nudges_query = nudges_query.filter(call_date__lte=date_to)
+
+    if mentor_id and user.role != 'mentor':  # Mentors can't filter by other mentors
+        visits_query = visits_query.filter(mentor_id=mentor_id)
+        nudges_query = nudges_query.filter(mentor_id=mentor_id)
+
     # Mentoring Visits
-    for visit in MentoringVisit.objects.select_related('household', 'household__village', 'mentor'):
+    for visit in visits_query.order_by('-visit_date'):
         writer.writerow([
-            'Visit',
+            'House Visit',
             visit.household.name,
             visit.household.village.name if visit.household.village else '',
+            visit.household.village.subcounty_obj.name if visit.household.village and visit.household.village.subcounty_obj else '',
             visit.mentor.get_full_name() if visit.mentor else '',
-            visit.visit_date.strftime('%Y-%m-%d'),
-            visit.topic,
-            '',  # duration not available in current model
+            visit.mentor.email if visit.mentor else '',
+            visit.visit_date.strftime('%Y-%m-%d') if visit.visit_date else '',
+            visit.visit_time.strftime('%H:%M') if hasattr(visit, 'visit_time') and visit.visit_time else '',
+            visit.topic or '',
+            getattr(visit, 'duration_minutes', ''),
             'Yes',
-            visit.notes[:100] + '...' if len(visit.notes) > 100 else visit.notes
+            visit.notes or '',
+            visit.created_at.strftime('%Y-%m-%d %H:%M:%S') if hasattr(visit, 'created_at') and visit.created_at else '',
+            f"VISIT-{visit.id}"
         ])
 
     # Phone Nudges
-    for nudge in PhoneNudge.objects.select_related('household', 'household__village', 'mentor'):
+    for nudge in nudges_query.order_by('-call_date'):
+        call_date_str = ''
+        call_time_str = ''
+
+        # Handle both datetime and date fields
+        if hasattr(nudge.call_date, 'date'):
+            call_date_str = nudge.call_date.strftime('%Y-%m-%d')
+            call_time_str = nudge.call_date.strftime('%H:%M')
+        else:
+            call_date_str = nudge.call_date.strftime('%Y-%m-%d') if nudge.call_date else ''
+
         writer.writerow([
             'Phone Call',
             nudge.household.name,
             nudge.household.village.name if nudge.household.village else '',
+            nudge.household.village.subcounty_obj.name if nudge.household.village and nudge.household.village.subcounty_obj else '',
             nudge.mentor.get_full_name() if nudge.mentor else '',
-            nudge.call_date.strftime('%Y-%m-%d'),
-            nudge.get_nudge_type_display(),
-            f"{nudge.duration_minutes}min" if nudge.duration_minutes else '',
+            nudge.mentor.email if nudge.mentor else '',
+            call_date_str,
+            call_time_str,
+            nudge.get_nudge_type_display() if hasattr(nudge, 'get_nudge_type_display') else nudge.nudge_type,
+            nudge.duration_minutes if nudge.duration_minutes else '',
             'Yes' if nudge.successful_contact else 'No',
-            nudge.notes[:100] + '...' if len(nudge.notes) > 100 else nudge.notes
+            nudge.notes or '',
+            nudge.created_at.strftime('%Y-%m-%d %H:%M:%S') if hasattr(nudge, 'created_at') and nudge.created_at else '',
+            f"CALL-{nudge.id}"
         ])
 
     return response

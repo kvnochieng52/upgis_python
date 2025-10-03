@@ -12,6 +12,95 @@
     </div>
 </div>
 
+<!-- Available Grants Section for Mentors/Field Associates -->
+{% if available_grants %}
+<div class="card mb-4 border-warning">
+    <div class="card-header bg-warning">
+        <h5 class="text-white mb-0">
+            <i class="fas fa-hand-holding-usd"></i> Available Grants - Apply on Behalf of Households
+        </h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            <i class="fas fa-info-circle"></i> Select a grant type below to apply on behalf of households in your assigned villages.
+        </p>
+
+        <!-- Active Programs -->
+        {% if available_grants.programs %}
+        <div class="mb-4">
+            <h6 class="text-primary mb-3"><i class="fas fa-certificate"></i> Active Programs</h6>
+            <div class="row">
+                {% for program in available_grants.programs %}
+                <div class="col-md-6 mb-3">
+                    <div class="card border-primary h-100">
+                        <div class="card-body">
+                            <h6 class="card-title text-primary">{{ program.name }}</h6>
+                            <p class="card-text text-muted small mb-2">{{ program.description|truncatewords:20 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-success">Active</span>
+                                <small class="text-muted">
+                                    {% if program.start_date %}Started: {{ program.start_date|date:"M Y" }}{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Grant Types -->
+        <h6 class="text-primary mb-3"><i class="fas fa-list-alt"></i> Available Grant Types</h6>
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 20%;">Grant Type</th>
+                        <th style="width: 55%;">Description</th>
+                        <th style="width: 25%;" class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grant_code, grant_name in available_grants.grant_types %}
+                    <tr>
+                        <td><strong>{{ grant_name }}</strong></td>
+                        <td>
+                            {% if grant_code == 'startup' %}
+                                <i class="fas fa-rocket text-success"></i> Initial business startup capital for new household enterprises
+                            {% elif grant_code == 'expansion' %}
+                                <i class="fas fa-chart-line text-info"></i> Funding to expand existing household businesses
+                            {% elif grant_code == 'equipment' %}
+                                <i class="fas fa-tools text-warning"></i> Equipment and tools for household business operations
+                            {% elif grant_code == 'training' %}
+                                <i class="fas fa-graduation-cap text-primary"></i> Skills training and capacity building support
+                            {% elif grant_code == 'emergency' %}
+                                <i class="fas fa-exclamation-triangle text-danger"></i> Emergency assistance for household crisis situations
+                            {% elif grant_code == 'other' %}
+                                <i class="fas fa-question-circle text-secondary"></i> Other grant types based on specific household needs
+                            {% else %}
+                                <i class="fas fa-hand-holding-heart text-info"></i> Grant support for household development
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{% url 'upg_grants:application_create_universal' %}?grant_type={{ grant_code }}"
+                               class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus-circle"></i> Apply Now
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alert alert-info mt-3 mb-0">
+            <i class="fas fa-lightbulb"></i> <strong>How to Apply:</strong> Click "Apply Now" for the appropriate grant type, then select a household from your assigned villages to submit the application.
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Filters -->
 <div class="card mb-3">
     <div class="card-header">

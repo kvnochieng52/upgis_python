@@ -145,7 +145,7 @@ class ProgramApplication(BaseModel):
         unique_together = ['program', 'household']  # One application per household per program
 
     def __str__(self):
-        return f"{self.household.household_head} - {self.program.name} ({self.get_status_display()})"
+        return f"{self.household.name} - {self.program.name} ({self.get_status_display()})"
 
 
 class ProgramBeneficiary(BaseModel):
@@ -175,4 +175,4 @@ class ProgramBeneficiary(BaseModel):
         unique_together = ['program', 'household']
 
     def __str__(self):
-        return f"{self.household.household_head} in {self.program.name}"
+        return f"{self.household.name} in {self.program.name}"

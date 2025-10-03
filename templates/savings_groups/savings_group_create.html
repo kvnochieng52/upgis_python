@@ -40,9 +40,12 @@
                             <select class="form-select" id="business_group" name="business_group">
                                 <option value="">Select Business Group (Optional)</option>
                                 {% for group in business_groups %}
-                                <option value="{{ group.id }}">{{ group.name }} - {{ group.village.name|default:"No village" }}</option>
+                                <option value="{{ group.id }}" data-village-id="{{ group.village.id|default:'' }}">
+                                    {{ group.name }} - {{ group.village.name|default:"No village" }}
+                                </option>
                                 {% endfor %}
                             </select>
+                            <small class="form-text text-muted">Only business groups from your assigned villages are shown</small>
                         </div>
                     </div>
 
@@ -88,4 +91,40 @@
         </div>
     </div>
 </div>
+
+<script>
+// Filter business groups when village is selected
+document.getElementById('village').addEventListener('change', function() {
+    const selectedVillageId = this.value;
+    const businessGroupSelect = document.getElementById('business_group');
+    const allOptions = businessGroupSelect.querySelectorAll('option');
+
+    allOptions.forEach(option => {
+        if (option.value === '') {
+            // Always show the default option
+            option.style.display = '';
+            return;
+        }
+
+        const optionVillageId = option.getAttribute('data-village-id');
+
+        if (!selectedVillageId) {
+            // If no village selected, show all business groups
+            option.style.display = '';
+        } else if (optionVillageId === selectedVillageId) {
+            // Show only business groups from selected village
+            option.style.display = '';
+        } else {
+            // Hide business groups from other villages
+            option.style.display = 'none';
+        }
+    });
+
+    // Reset business group selection if current selection is now hidden
+    const currentOption = businessGroupSelect.options[businessGroupSelect.selectedIndex];
+    if (currentOption && currentOption.style.display === 'none') {
+        businessGroupSelect.value = '';
+    }
+});
+</script>
 {% endblock %}

@@ -30,7 +30,7 @@ def graduation_dashboard(request):
 
     # Get household programs for UPG programs
     household_programs = HouseholdProgram.objects.filter(
-        program__in=upg_programs
+        program__program_type='graduation'
     ).select_related('household', 'program')
 
     # Apply role-based filtering

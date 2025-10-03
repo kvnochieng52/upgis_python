@@ -93,6 +93,15 @@ def admin_dashboard_view(request):
             PRGrant.objects.filter(status='disbursed').count() +
             HouseholdGrantApplication.objects.filter(status='disbursed').count()
         ),
+        # Mentor activity logs for admin
+        'total_house_visits': MentoringVisit.objects.count(),
+        'total_phone_calls': PhoneNudge.objects.count(),
+        'recent_house_visits': MentoringVisit.objects.filter(
+            visit_date__gte=timezone.now().date() - timedelta(days=30)
+        ).count(),
+        'recent_phone_calls': PhoneNudge.objects.filter(
+            call_date__gte=timezone.now().date() - timedelta(days=30)
+        ).count(),
     }
 
     # Role-specific data
@@ -142,11 +151,13 @@ def mentor_dashboard_view(request):
     # Get mentor's assigned trainings
     assigned_trainings = Training.objects.filter(assigned_mentor=user).order_by('-start_date')
 
-    # Get current/active trainings
+    # Get current/active trainings (includes trainings without end_date)
+    from django.db.models import Q
+    current_date = timezone.now().date()
     current_trainings = assigned_trainings.filter(
-        status__in=['planned', 'active'],
-        start_date__lte=timezone.now().date(),
-        end_date__gte=timezone.now().date()
+        Q(status__in=['planned', 'active']) &
+        Q(start_date__lte=current_date) &
+        (Q(end_date__gte=current_date) | Q(end_date__isnull=True))
     )
 
     # Get households in mentor's assigned villages (more comprehensive)
@@ -181,6 +192,23 @@ def mentor_dashboard_view(request):
         call_date__gte=thirty_days_ago
     ).order_by('-call_date')
 
+    # Grant statistics for mentor's households
+    mentor_grant_applications = HouseholdGrantApplication.objects.filter(
+        household__in=mentor_households
+    ).select_related('household', 'program')
+
+    grant_stats = {
+        'total_applications': mentor_grant_applications.count(),
+        'applied': mentor_grant_applications.filter(status__in=['submitted', 'draft']).count(),
+        'under_review': mentor_grant_applications.filter(status='under_review').count(),
+        'approved': mentor_grant_applications.filter(status='approved').count(),
+        'disbursed': mentor_grant_applications.filter(status='disbursed').count(),
+        'rejected': mentor_grant_applications.filter(status='rejected').count(),
+    }
+
+    # Recent grant applications (last 5)
+    recent_grants = mentor_grant_applications.order_by('-created_at')[:5]
+
     # Stats for mentor dashboard
     stats = {
         'assigned_trainings': assigned_trainings.count(),
@@ -189,6 +217,7 @@ def mentor_dashboard_view(request):
         'visits_this_month': recent_visits.count(),
         'nudges_this_month': recent_nudges.count(),
         'pending_reports': 0,  # Can be calculated based on reporting schedule
+        'total_grant_applications': grant_stats['total_applications'],
     }
 
     # Upcoming activities (next 7 days)
@@ -202,10 +231,12 @@ def mentor_dashboard_view(request):
         'stats': stats,
         'assigned_trainings': assigned_trainings[:5],  # Latest 5
         'current_trainings': current_trainings,
-        'mentor_households': mentor_households[:10],  # Latest 10
+        'mentor_households': mentor_households,  # All assigned households
         'recent_visits': recent_visits[:5],
         'recent_nudges': recent_nudges[:5],
         'upcoming_trainings': upcoming_trainings,
+        'grant_stats': grant_stats,
+        'recent_grants': recent_grants,
         'dashboard_type': 'mentor',
     }
 
@@ -249,21 +280,71 @@ def me_dashboard_view(request):
     """M&E Staff dashboard with monitoring data"""
     user = request.user
 
+    # Get date ranges
+    thirty_days_ago = timezone.now().date() - timedelta(days=30)
+    seven_days_ago = timezone.now().date() - timedelta(days=7)
+
     # Monitoring & Evaluation specific metrics
     stats = {
         'total_reports': MentoringReport.objects.count(),
         'pending_reports': MentoringReport.objects.filter(
-            submitted_date__gte=timezone.now().date() - timedelta(days=30)
+            submitted_date__gte=thirty_days_ago
         ).count(),
         'training_completion_rate': 0,  # Calculate based on training completion
         'household_visits': MentoringVisit.objects.filter(
-            visit_date__gte=timezone.now().date() - timedelta(days=30)
+            visit_date__gte=thirty_days_ago
+        ).count(),
+        'phone_nudges': PhoneNudge.objects.filter(
+            call_date__gte=thirty_days_ago
+        ).count(),
+        'total_mentor_activities': MentoringVisit.objects.count() + PhoneNudge.objects.count(),
+        'recent_visits': MentoringVisit.objects.filter(
+            visit_date__gte=seven_days_ago
+        ).count(),
+        'recent_calls': PhoneNudge.objects.filter(
+            call_date__gte=seven_days_ago
         ).count(),
     }
+
+    # Recent mentor activities (last 30 days) - combining visits and calls
+    recent_visits = MentoringVisit.objects.filter(
+        visit_date__gte=thirty_days_ago
+    ).select_related('household', 'mentor', 'household__village').order_by('-visit_date')[:10]
+
+    recent_calls = PhoneNudge.objects.filter(
+        call_date__gte=thirty_days_ago
+    ).select_related('household', 'mentor', 'household__village').order_by('-call_date')[:10]
+
+    # Mentor activity summary by mentor
+    from django.db.models import Count
+    mentor_activity = []
+    from accounts.models import User
+    mentors = User.objects.filter(role='mentor')
+    for mentor in mentors:
+        visit_count = MentoringVisit.objects.filter(
+            mentor=mentor,
+            visit_date__gte=thirty_days_ago
+        ).count()
+        call_count = PhoneNudge.objects.filter(
+            mentor=mentor,
+            call_date__gte=thirty_days_ago
+        ).count()
+        mentor_activity.append({
+            'mentor': mentor,
+            'visits': visit_count,
+            'calls': call_count,
+            'total': visit_count + call_count
+        })
+
+    # Sort by total activity
+    mentor_activity.sort(key=lambda x: x['total'], reverse=True)
 
     context = {
         'user': user,
         'stats': stats,
+        'recent_visits': recent_visits,
+        'recent_calls': recent_calls,
+        'mentor_activity': mentor_activity[:10],  # Top 10 most active mentors
         'dashboard_type': 'me',
     }
 

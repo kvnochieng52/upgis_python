@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-phone"></i> {{ page_title }}</h1>
+        <div class="btn-group">
+            <a href="{% url 'training:phone_nudge_list' %}" class="btn btn-info btn-sm">
+                <i class="fas fa-list"></i> View All Phone Nudges
+            </a>
+            <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Phone Nudge Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="phoneNudgeForm">
+                        {% csrf_token %}
+
+                        <!-- Household Selection -->
+                        <div class="mb-3">
+                            <label for="household" class="form-label">Household <span class="text-danger">*</span></label>
+                            <select class="form-select" id="household" name="household" required>
+                                <option value="">Select Household</option>
+                                {% for household in households %}
+                                <option value="{{ household.id }}" data-village="{{ household.village.name }}" data-phone="{{ household.phone_number }}">
+                                    {{ household.name }} - {{ household.village.name }} {% if household.phone_number %}({{ household.phone_number }}){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select the household you called</div>
+                        </div>
+
+                        <!-- Nudge Type -->
+                        <div class="mb-3">
+                            <label for="nudge_type" class="form-label">Nudge Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="nudge_type" name="nudge_type" required>
+                                <option value="">Select Nudge Type</option>
+                                {% for key, value in nudge_types %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">What was the purpose of this phone call?</div>
+                        </div>
+
+                        <!-- Call Details -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="call_date" class="form-label">Call Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="call_date" name="call_date" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="call_time" class="form-label">Call Time <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="call_time" name="call_time" required>
+                            </div>
+                        </div>
+
+                        <!-- Call Duration & Success -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="duration_minutes" class="form-label">Duration (minutes) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="duration_minutes" name="duration_minutes"
+                                       min="0" max="120" required placeholder="e.g., 15">
+                                <div class="form-text">How long did the call last?</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contact Status</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="successful_contact" name="successful_contact">
+                                    <label class="form-check-label" for="successful_contact">
+                                        Successfully reached household
+                                    </label>
+                                </div>
+                                <div class="form-text">Check if you spoke with the household member</div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-4">
+                            <label for="notes" class="form-label">Call Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4"
+                                placeholder="What was discussed? Any follow-up actions needed? Household feedback?"></textarea>
+                            <div class="form-text">Record important details from the conversation</div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Log Phone Nudge
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'training:log_visit' %}" class="btn btn-outline-info">
+                            <i class="fas fa-home"></i> Log Visit
+                        </a>
+                        <a href="{% url 'training:create_mentoring_report' %}" class="btn btn-outline-success">
+                            <i class="fas fa-file-alt"></i> Create Report
+                        </a>
+                        <a href="{% url 'training:phone_nudge_list' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-list"></i> View All Phone Nudges
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guidelines -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title"><i class="fas fa-lightbulb"></i> Phone Nudge Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Nudge Types:</h6>
+                    <ul class="small">
+                        <li><strong>Reminder:</strong> Remind about training, meeting, or task</li>
+                        <li><strong>Follow-up:</strong> Check progress on previous actions</li>
+                        <li><strong>Support:</strong> Provide guidance or answer questions</li>
+                        <li><strong>Check-in:</strong> General welfare and business check</li>
+                    </ul>
+
+                    <h6>Good Call Notes Include:</h6>
+                    <ul class="small">
+                        <li>Reason for the call</li>
+                        <li>Household's response or feedback</li>
+                        <li>Any issues or concerns raised</li>
+                        <li>Action items or next steps</li>
+                        <li>Follow-up required (yes/no)</li>
+                    </ul>
+
+                    <h6>Best Practices:</h6>
+                    <ul class="small">
+                        <li>Call at convenient times for households</li>
+                        <li>Keep calls focused and purposeful</li>
+                        <li>Log calls immediately after completion</li>
+                        <li>Note if household couldn't be reached</li>
+                        <li>Schedule follow-up calls when needed</li>
+                    </ul>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <small><strong>Tip:</strong> If you can't reach the household, uncheck "Successfully reached" and note when you'll try again.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date and time to now
+    const now = new Date();
+    document.getElementById('call_date').value = now.toISOString().split('T')[0];
+    document.getElementById('call_time').value = now.toTimeString().substring(0, 5);
+
+    // Default successful contact to checked
+    document.getElementById('successful_contact').checked = true;
+
+    // Form validation
+    document.getElementById('phoneNudgeForm').addEventListener('submit', function(e) {
+        const callDate = new Date(document.getElementById('call_date').value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (callDate > today) {
+            e.preventDefault();
+            alert('Call date cannot be in the future.');
+            return false;
+        }
+
+        // Check if call date is too old (more than 7 days ago)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        if (callDate < sevenDaysAgo) {
+            if (!confirm('This call was more than 7 days ago. Are you sure you want to log it?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+
+        // Validate duration
+        const duration = parseInt(document.getElementById('duration_minutes').value);
+        if (duration > 60) {
+            if (!confirm('This call lasted more than 60 minutes. Is this correct?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+
+    // Household search functionality
+    const householdSelect = document.getElementById('household');
+    const householdSearchInput = document.createElement('input');
+    householdSearchInput.type = 'text';
+    householdSearchInput.className = 'form-control mb-2';
+    householdSearchInput.placeholder = 'Search households...';
+    householdSelect.parentNode.insertBefore(householdSearchInput, householdSelect);
+
+    householdSearchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const options = householdSelect.querySelectorAll('option');
+
+        options.forEach(option => {
+            if (option.value === '') return; // Skip empty option
+
+            const text = option.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+    });
+
+    // Auto-update notes template based on nudge type
+    const nudgeTypeSelect = document.getElementById('nudge_type');
+    const notesTextarea = document.getElementById('notes');
+
+    nudgeTypeSelect.addEventListener('change', function() {
+        if (notesTextarea.value.trim() === '') {
+            const nudgeType = this.options[this.selectedIndex].text;
+
+            const templates = {
+                'reminder': 'Reminder sent about: \n\nHousehold response: \n\nNext steps: ',
+                'follow_up': 'Following up on: \n\nProgress made: \n\nChallenges: \n\nNext actions: ',
+                'support': 'Support provided for: \n\nGuidance given: \n\nHousehold feedback: ',
+                'check_in': 'General check-in\n\nBusiness status: \n\nHousehold welfare: \n\nNeeds identified: '
+            };
+
+            const template = templates[this.value];
+            if (template) {
+                notesTextarea.value = template;
+            }
+        }
+    });
+
+    // Display household phone number when selected
+    householdSelect.addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        const phone = selected.getAttribute('data-phone');
+
+        if (phone && phone !== 'None') {
+            const phoneDisplay = document.getElementById('phone-display');
+            if (!phoneDisplay) {
+                const div = document.createElement('div');
+                div.id = 'phone-display';
+                div.className = 'alert alert-info mt-2';
+                div.innerHTML = `<i class="fas fa-phone"></i> <strong>Phone:</strong> ${phone}`;
+                this.parentNode.appendChild(div);
+            } else {
+                phoneDisplay.innerHTML = `<i class="fas fa-phone"></i> <strong>Phone:</strong> ${phone}`;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

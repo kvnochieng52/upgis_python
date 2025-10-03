@@ -314,6 +314,15 @@ def user_settings(request, user_id=None):
     settings_obj, created = UserSettings.objects.get_or_create(user=user)
 
     if request.method == 'POST':
+        # Update profile picture if uploaded
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+            try:
+                user.save()
+                messages.success(request, 'Profile picture updated successfully!')
+            except Exception as e:
+                messages.error(request, f'Error uploading profile picture: {str(e)}')
+
         # Update settings
         settings_obj.email_notifications = request.POST.get('email_notifications') == 'on'
         settings_obj.sms_notifications = request.POST.get('sms_notifications') == 'on'
@@ -452,3 +461,55 @@ def create_alert(request):
         'role_choices': User.ROLE_CHOICES,
     }
     return render(request, 'settings_module/create_alert.html', context)
+
+
+@login_required
+def toggle_alert(request, alert_id):
+    """Toggle alert active status"""
+    from django.http import JsonResponse
+
+    if not (request.user.is_superuser or request.user.role == 'ict_admin'):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    alert = get_object_or_404(SystemAlert, id=alert_id)
+
+    if request.method == 'POST':
+        try:
+            activate = request.POST.get('activate', 'false') == 'true'
+            alert.is_active = activate
+            alert.save()
+
+            action = 'activated' if activate else 'deactivated'
+            return JsonResponse({
+                'success': True,
+                'message': f'Alert "{alert.title}" has been {action}'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def delete_alert(request, alert_id):
+    """Delete a system alert"""
+    from django.http import JsonResponse
+
+    if not (request.user.is_superuser or request.user.role == 'ict_admin'):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    alert = get_object_or_404(SystemAlert, id=alert_id)
+
+    if request.method == 'POST':
+        try:
+            alert_title = alert.title
+            alert.delete()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Alert "{alert_title}" has been deleted'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)

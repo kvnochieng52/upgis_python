@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-hand-holding-usd"></i> {{ page_title }}</h1>
+    <div>
+        <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Grant Types -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> Available Grant Types</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Select a grant type to apply for your household members:</p>
+                <div class="row">
+                    {% for value, label in grant_types %}
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'upg_grants:application_create_universal' %}?grant_type={{ value }}" class="text-decoration-none">
+                            <div class="card h-100 border-primary grant-card">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary">
+                                        <i class="fas fa-money-check-alt"></i> {{ label }}
+                                    </h6>
+                                    <p class="card-text small text-muted">
+                                        {% if value == 'startup' %}
+                                        <i class="fas fa-rocket text-success"></i> Initial business startup capital for new household enterprises
+                                        {% elif value == 'expansion' %}
+                                        <i class="fas fa-chart-line text-info"></i> Funding to expand existing household businesses
+                                        {% elif value == 'equipment' %}
+                                        <i class="fas fa-tools text-warning"></i> Equipment and tools for household business operations
+                                        {% elif value == 'training' %}
+                                        <i class="fas fa-graduation-cap text-primary"></i> Skills training and capacity building support
+                                        {% elif value == 'emergency' %}
+                                        <i class="fas fa-exclamation-triangle text-danger"></i> Emergency assistance for household crisis situations
+                                        {% elif value == 'other' %}
+                                        <i class="fas fa-question-circle text-secondary"></i> Other grant types based on specific household needs
+                                        {% else %}
+                                        <i class="fas fa-hand-holding-heart text-info"></i> Grant support for household development
+                                        {% endif %}
+                                    </p>
+                                    <div class="text-center mt-3">
+                                        <span class="btn btn-sm btn-primary">
+                                            <i class="fas fa-arrow-right"></i> Apply Now
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Programs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-project-diagram"></i> Active Programs</h5>
+            </div>
+            <div class="card-body">
+                {% if active_programs %}
+                <p class="text-muted mb-3">Grants can be applied for under the following active programs:</p>
+                <div class="row">
+                    {% for program in active_programs %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-check-circle text-success"></i> {{ program.name }}
+                                </h6>
+                                <p class="card-text small">
+                                    <strong>Type:</strong> {{ program.get_program_type_display }}<br>
+                                    <strong>Status:</strong> <span class="badge bg-success">{{ program.get_status_display }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-info-circle text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3">No active programs available at the moment.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How to Apply -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6><i class="fas fa-question-circle"></i> How to Apply</h6>
+                <ol class="mb-0">
+                    <li>Navigate to your household list in the dashboard</li>
+                    <li>Select the household you want to apply for</li>
+                    <li>Click on "Apply for Grant" button</li>
+                    <li>Fill out the application form with required details</li>
+                    <li>Submit for review</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.grant-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.grant-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-color: #0d6efd !important;
+}
+
+.grant-card .card-body {
+    padding: 1.5rem;
+}
+</style>
+{% endblock %}

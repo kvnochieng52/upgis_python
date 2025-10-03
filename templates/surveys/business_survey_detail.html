@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1><i class="fas fa-chart-line"></i> {{ page_title }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'surveys:survey_list' %}">Surveys</a></li>
+                <li class="breadcrumb-item active">{{ survey.business_group.name }}</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-group">
+        <a href="{% url 'surveys:business_survey_edit' survey.pk %}" class="btn btn-outline-secondary">
+            <i class="fas fa-edit"></i> Edit
+        </a>
+        <a href="{% url 'surveys:survey_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Surveys
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Survey Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Survey Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Business Group:</strong> {{ survey.business_group.name }}</p>
+                        <p><strong>Survey Date:</strong> {{ survey.survey_date|date:"M d, Y"|default:"Not specified" }}</p>
+                        <p><strong>Surveyor:</strong> {{ survey.surveyor.get_full_name|default:survey.surveyor|default:"Not specified" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Created:</strong> {{ survey.created_at|date:"M d, Y H:i" }}</p>
+                        <p><strong>Business Health:</strong>
+                            {% if survey.business_group.current_business_health == 'green' %}
+                                <span class="badge bg-success">Green - Good Performance</span>
+                            {% elif survey.business_group.current_business_health == 'yellow' %}
+                                <span class="badge bg-warning">Yellow - Fair Performance</span>
+                            {% else %}
+                                <span class="badge bg-danger">Red - Poor Performance</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Status:</strong>
+                            <span class="badge bg-success">Completed</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Group Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-briefcase"></i> Business Group Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Business Name:</strong> {{ survey.business_group.name }}</p>
+                        <p><strong>Business Type:</strong> {{ survey.business_group.get_business_type_display }}</p>
+                        <p><strong>Business Detail:</strong> {{ survey.business_group.business_type_detail|default:"Not specified" }}</p>
+                        <p><strong>Group Size:</strong> {{ survey.business_group.group_size }} members</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Program:</strong> {{ survey.business_group.program.name|default:"Not specified" }}</p>
+                        <p><strong>Formation Date:</strong> {{ survey.business_group.formation_date|date:"M d, Y" }}</p>
+                        <p><strong>Participation Status:</strong>
+                            {% if survey.business_group.participation_status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif survey.business_group.participation_status == 'suspended' %}
+                                <span class="badge bg-warning">Suspended</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Withdrawn</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'business_groups:group_detail' survey.business_group.pk %}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-eye"></i> View Business Group Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Metrics -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-money-bill-wave"></i> Financial Metrics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Grant Information</h6>
+                        <p><strong>Grant Value:</strong>
+                            {% if survey.grant_value %}
+                                KES {{ survey.grant_value|floatformat:2 }}
+                            {% else %}
+                                Not recorded
+                            {% endif %}
+                        </p>
+                        <p><strong>Grant Used:</strong>
+                            {% if survey.grant_used %}
+                                KES {{ survey.grant_used|floatformat:2 }}
+                            {% else %}
+                                KES 0.00
+                            {% endif %}
+                        </p>
+                        <p><strong>Grant Balance:</strong>
+                            {% if survey.grant_value %}
+                                KES {{ survey.grant_value|add:"-"|add:survey.grant_used|floatformat:2 }}
+                            {% else %}
+                                Not available
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Performance Metrics</h6>
+                        <p><strong>Profit:</strong>
+                            {% if survey.profit %}
+                                <span class="{% if survey.profit > 0 %}text-success{% elif survey.profit < 0 %}text-danger{% endif %}">
+                                    KES {{ survey.profit|floatformat:2 }}
+                                </span>
+                            {% else %}
+                                KES 0.00
+                            {% endif %}
+                        </p>
+                        <p><strong>Business Cash:</strong>
+                            {% if survey.business_cash %}
+                                KES {{ survey.business_cash|floatformat:2 }}
+                            {% else %}
+                                KES 0.00
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Assets -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-boxes"></i> Business Assets & Inventory</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Business Inputs</h6>
+                        {% if survey.business_inputs %}
+                        <div class="border rounded p-2 bg-light">
+                            {{ survey.business_inputs|linebreaks }}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No inputs recorded</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Business Inventory</h6>
+                        {% if survey.business_inventory %}
+                        <div class="border rounded p-2 bg-light">
+                            {{ survey.business_inventory|linebreaks }}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No inventory recorded</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-bolt"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'surveys:business_survey_edit' survey.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit Survey
+                    </a>
+                    <a href="{% url 'business_groups:group_detail' survey.business_group.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-briefcase"></i> View Business Group
+                    </a>
+                    <a href="{% url 'surveys:business_survey_create' %}" class="btn btn-outline-success">
+                        <i class="fas fa-plus"></i> New Business Survey
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Summary -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-pie"></i> Business Summary</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Group Members:</span>
+                    <strong>{{ survey.business_group.members.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Previous Surveys:</span>
+                    <strong>{{ survey.business_group.progress_surveys.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>SB Grants:</span>
+                    <strong>{{ survey.business_group.sb_grants.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>PR Grants:</span>
+                    <strong>{{ survey.business_group.pr_grants.count }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Overview -->
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-calculator"></i> Financial Overview</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">Grant Utilization</small>
+                    {% if survey.grant_value and survey.grant_value > 0 %}
+                    <div class="progress" style="height: 20px;">
+                        {% widthratio survey.grant_used survey.grant_value 100 as percentage %}
+                        <div class="progress-bar {% if percentage > 80 %}bg-success{% elif percentage > 50 %}bg-warning{% else %}bg-info{% endif %}"
+                             role="progressbar"
+                             style="width: {{ percentage }}%"
+                             aria-valuenow="{{ percentage }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            {{ percentage }}%
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small">No grant data</p>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small">Total Grant:</span>
+                    <strong class="small">KES {{ survey.grant_value|floatformat:2|default:"0.00" }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small">Grant Used:</span>
+                    <strong class="small">KES {{ survey.grant_used|floatformat:2|default:"0.00" }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="small">Current Profit:</span>
+                    <strong class="small {% if survey.profit > 0 %}text-success{% elif survey.profit < 0 %}text-danger{% endif %}">
+                        KES {{ survey.profit|floatformat:2|default:"0.00" }}
+                    </strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="small">Cash on Hand:</span>
+                    <strong class="small">KES {{ survey.business_cash|floatformat:2|default:"0.00" }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

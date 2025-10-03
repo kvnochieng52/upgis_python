@@ -173,7 +173,8 @@
             return;
         }
 
-        window.location.href = `/grants/apply/?type=${applicantType}&id=${applicantId}`;
+        // Redirect to universal grant application creation page
+        window.location.href = `/upg-grants/applications/create/?applicant_type=${applicantType}&applicant_id=${applicantId}`;
     }
     </script>
 
@@ -533,15 +534,4 @@
         </div>
     </div>
 </div>
-
-<script>
-function applyForGrant() {
-    const householdId = document.getElementById('household-select').value;
-    if (!householdId) {
-        alert('Please select a household first');
-        return;
-    }
-    window.location.href = '/upg-grants/applications/create/' + householdId + '/';
-}
-</script>
 {% endblock %}

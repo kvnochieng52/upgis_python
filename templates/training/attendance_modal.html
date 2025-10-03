@@ -10,7 +10,7 @@
         <strong>Training:</strong> {{ training.name }}<br>
         <strong>Module:</strong> {{ training.module_id }}<br>
         <strong>Status:</strong> {{ training.get_status_display }}<br>
-        <strong>Date:</strong> {{ training.start_date|default:"Not set" }}<br>
+        <strong>Period:</strong> {{ training.start_date|date:"M d, Y" }} - {{ training.end_date|date:"M d, Y"|default:"Ongoing" }}<br>
         {% if training.location %}
         <strong>Location:</strong> {{ training.location }}<br>
         {% endif %}
@@ -20,6 +20,29 @@
         {% if training.max_households %}
         <strong>Max Households:</strong> {{ training.max_households }}
         {% endif %}
+    </div>
+
+    <!-- Date Selection -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <label for="attendance-date-selector" class="form-label"><strong>Select Date for Attendance:</strong></label>
+                    <input type="date" class="form-control" id="attendance-date-selector"
+                           value="{{ selected_date|date:'Y-m-d' }}"
+                           min="{{ training.start_date|date:'Y-m-d' }}"
+                           {% if training.end_date %}max="{{ training.end_date|date:'Y-m-d' }}"{% endif %}>
+                </div>
+                <div class="col-md-6">
+                    <button type="button" class="btn btn-primary mt-4" id="load-attendance-btn">
+                        <i class="fas fa-sync"></i> Load Attendance
+                    </button>
+                    <small class="text-muted d-block mt-2">
+                        Showing attendance for: <strong id="current-date-display">{{ selected_date|date:"M d, Y" }}</strong>
+                    </small>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Mentor Instructions -->
@@ -160,10 +183,30 @@
 $(document).ready(function() {
     const trainingId = {{ training.id }};
 
+    // Load attendance for selected date
+    $('#load-attendance-btn').click(function() {
+        const selectedDate = $('#attendance-date-selector').val();
+        if (selectedDate) {
+            window.location.href = `/training/${trainingId}/attendance/?date=${selectedDate}`;
+        }
+    });
+
+    // Also reload on date change (Enter key)
+    $('#attendance-date-selector').keypress(function(e) {
+        if (e.which === 13) { // Enter key
+            $('#load-attendance-btn').click();
+        }
+    });
+
     // Show add household form
     $('#add-first-household-btn, #add-household-btn').click(function() {
         console.log('Add household button clicked');
         $('#household-selection-form').show();
+        // Set the attendance date to the currently selected date
+        const currentDate = $('#attendance-date-selector').val();
+        if (currentDate) {
+            $('#attendance-date').val(currentDate);
+        }
         loadAvailableHouseholds();
     });
 

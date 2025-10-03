@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}M&E Dashboard - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-chart-line"></i> Monitoring & Evaluation Dashboard</h1>
+    <span class="badge bg-info fs-6">M&E Staff</span>
+</div>
+
+<!-- M&E Notice -->
+<div class="alert alert-info mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>M&E Dashboard:</strong> Monitor program activities, mentor performance, and generate evaluation reports.
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.total_reports }}</h4>
+                <small>Total Reports</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.household_visits }}</h4>
+                <small>Visits (30 Days)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.phone_nudges }}</h4>
+                <small>Phone Nudges (30 Days)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.total_mentor_activities }}</h4>
+                <small>Total Mentor Activities</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity Summary -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Recent Activity (7 Days)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <p><strong>Recent Visits:</strong> {{ stats.recent_visits }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <p><strong>Recent Calls:</strong> {{ stats.recent_calls }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-check"></i> Reporting Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <p><strong>Pending Reports:</strong> {{ stats.pending_reports }}</p>
+                    </div>
+                    <div class="col-sm-6">
+                        <p><strong>Training Completion:</strong> {{ stats.training_completion_rate }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mentor Performance Overview -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-users"></i> Top Mentor Performance (Last 30 Days)</h5>
+            </div>
+            <div class="card-body">
+                {% if mentor_activity %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Mentor</th>
+                                <th>Visits</th>
+                                <th>Phone Calls</th>
+                                <th>Total Activities</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in mentor_activity %}
+                            <tr>
+                                <td>{{ activity.mentor.get_full_name|default:activity.mentor.username }}</td>
+                                <td><span class="badge bg-success">{{ activity.visits }}</span></td>
+                                <td><span class="badge bg-info">{{ activity.calls }}</span></td>
+                                <td><strong>{{ activity.total }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No mentor activity data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-home"></i> Recent Household Visits</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_visits %}
+                <div class="list-group">
+                    {% for visit in recent_visits %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ visit.household.name }}</h6>
+                            <small>{{ visit.visit_date|date:"M d, Y" }}</small>
+                        </div>
+                        <p class="mb-1"><small>{{ visit.topic }}</small></p>
+                        <small class="text-muted">By: {{ visit.mentor.get_full_name|default:visit.mentor.username }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No recent visits</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-phone"></i> Recent Phone Nudges</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_calls %}
+                <div class="list-group">
+                    {% for call in recent_calls %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ call.household.name }}</h6>
+                            <small>{{ call.call_date|date:"M d, Y" }}</small>
+                        </div>
+                        <p class="mb-1"><small>{{ call.get_nudge_type_display }}</small></p>
+                        <small class="text-muted">By: {{ call.mentor.get_full_name|default:call.mentor.username }} - {{ call.duration_minutes }} min</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No recent phone nudges</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'training:mentoring_reports' %}" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-file-alt"></i> View All Reports
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'training:mentoring_analytics' %}" class="btn btn-info w-100 mb-2">
+                            <i class="fas fa-chart-pie"></i> Analytics
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'training:visit_list' %}" class="btn btn-success w-100 mb-2">
+                            <i class="fas fa-list"></i> All Visits
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'training:phone_nudge_list' %}" class="btn btn-warning w-100 mb-2">
+                            <i class="fas fa-phone-alt"></i> All Phone Nudges
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

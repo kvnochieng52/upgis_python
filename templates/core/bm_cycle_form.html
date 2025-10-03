@@ -47,9 +47,14 @@
 
                     <div class="mb-3">
                         <label for="field_associate" class="form-label">Field Associate <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="field_associate" name="field_associate"
-                               value="{{ cycle.field_associate|default:'' }}" required
-                               placeholder="Field Associate Name">
+                        <select class="form-select" id="field_associate" name="field_associate" required>
+                            <option value="">Choose field associate...</option>
+                            {% for fa in field_associates %}
+                            <option value="{{ fa.get_full_name }}" {% if cycle and cycle.field_associate == fa.get_full_name %}selected{% endif %}>
+                                {{ fa.get_full_name }} ({{ fa.email }})
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div class="mb-3">

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(python manage.py:*)",
+      "Bash(timeout:*)",
+      "Bash(where /r . grants_dashboard.html)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

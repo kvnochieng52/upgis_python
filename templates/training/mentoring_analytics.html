@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-chart-line"></i> {{ page_title }}</h1>
+        <div>
+            <a href="{% url 'training:mentoring_dashboard' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Time Period Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="days" class="form-label">Time Period</label>
+                    <select class="form-select" id="days" name="days" onchange="this.form.submit()">
+                        <option value="7" {% if days_back == 7 %}selected{% endif %}>Last 7 Days</option>
+                        <option value="30" {% if days_back == 30 %}selected{% endif %}>Last 30 Days</option>
+                        <option value="90" {% if days_back == 90 %}selected{% endif %}>Last 90 Days</option>
+                        <option value="180" {% if days_back == 180 %}selected{% endif %}>Last 6 Months</option>
+                        <option value="365" {% if days_back == 365 %}selected{% endif %}>Last Year</option>
+                    </select>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">&nbsp;</label>
+                    <p class="mb-0">Showing data from <strong>{{ start_date|date:"M d, Y" }}</strong> to present</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Overall Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3>{{ total_mentors }}</h3>
+                    <p class="mb-0">Total Mentors</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3>{{ total_visits }}</h3>
+                    <p class="mb-0">Total Visits</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3>{{ total_phone_nudges }}</h3>
+                    <p class="mb-0">Phone Nudges</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h3>{{ total_households_reached }}</h3>
+                    <p class="mb-0">Households Reached</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Mentor Performance Ranking -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-trophy"></i> Top Performing Mentors</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Mentor</th>
+                                    <th>Visits</th>
+                                    <th>Nudges</th>
+                                    <th>Households</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for perf in mentor_performance %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ perf.mentor.get_full_name }}</td>
+                                    <td>{{ perf.visits }}</td>
+                                    <td>{{ perf.nudges }}</td>
+                                    <td>{{ perf.households }}</td>
+                                    <td><strong>{{ perf.score }}</strong></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">No data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visit Type Distribution -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Visit Type Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Visit Type</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vt in visit_types %}
+                                <tr>
+                                    <td>{{ vt.visit_type|title }}</td>
+                                    <td>{{ vt.count }}</td>
+                                    <td>
+                                        {% widthratio vt.count total_visits 100 %}%
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Trend -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-area"></i> Monthly Activity Trend</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyTrendChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nudge Duration Statistics -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock"></i> Average Call Duration by Type</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nudge Type</th>
+                                    <th>Total Calls</th>
+                                    <th>Avg Duration (min)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for nd in nudge_duration_stats %}
+                                <tr>
+                                    <td>{{ nd.nudge_type|title }}</td>
+                                    <td>{{ nd.total_calls }}</td>
+                                    <td>{{ nd.avg_duration|floatformat:1 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No data available</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Monthly Trend Chart
+const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+const monthlyTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [
+            {% for data in monthly_data %}'{{ data.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}
+        ],
+        datasets: [{
+            label: 'Visits',
+            data: [{% for data in monthly_data %}{{ data.visits }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }, {
+            label: 'Phone Nudges',
+            data: [{% for data in monthly_data %}{{ data.nudges }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: true,
+                text: 'Mentoring Activities Over Time'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }} - UPG Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-users"></i> {{ page_title }}</h1>
+        <a href="{% url 'upg_grants:application_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Grants
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-home"></i> Select a Household to Apply for {{ grant_type|title }} Grant
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if households %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Select one of your assigned households to apply for this grant on their behalf.
+            </div>
+
+            <!-- Search Box -->
+            <div class="mb-3">
+                <input type="text" id="householdSearch" class="form-control" placeholder="Search households by name or village...">
+            </div>
+
+            <!-- Households Table -->
+            <div class="table-responsive">
+                <table class="table table-hover" id="householdsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Household Name</th>
+                            <th>Village</th>
+                            <th>Sub-County</th>
+                            <th>Members</th>
+                            <th>Status</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for household in households %}
+                        <tr>
+                            <td><strong>{{ household.name }}</strong></td>
+                            <td>{{ household.village.name }}</td>
+                            <td>{{ household.village.sub_county.name }}</td>
+                            <td>{{ household.number_of_members|default:"N/A" }}</td>
+                            <td>
+                                {% if household.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'upg_grants:application_create_universal' %}?applicant_type=household&applicant_id={{ household.id }}&grant_type={{ grant_type }}"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="fas fa-hand-holding-usd"></i> Apply for Grant
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+                <h5 class="mt-3">No Households Available</h5>
+                <p class="text-muted">You don't have any assigned households to apply for grants.</p>
+                <a href="{% url 'upg_grants:application_list' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Back to Grants
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Search functionality
+document.getElementById('householdSearch').addEventListener('keyup', function() {
+    const searchValue = this.value.toLowerCase();
+    const tableRows = document.querySelectorAll('#householdsTable tbody tr');
+
+    tableRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchValue)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

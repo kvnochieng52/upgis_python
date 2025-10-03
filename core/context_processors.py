@@ -40,7 +40,7 @@ def user_permissions(request):
             'can_view_reports': user.is_superuser or user.role in ['ict_admin', 'me_staff', 'county_executive', 'county_assembly'],
             'can_export_reports': user.is_superuser or user.role in ['ict_admin', 'me_staff', 'county_executive'],
 
-            'can_view_settings': user.is_superuser or user.role in ['ict_admin', 'me_staff'],
+            'can_view_settings': user.is_superuser or user.role == 'ict_admin',
             'can_manage_users': user.is_superuser or user.role == 'ict_admin',
 
             # ESR Import permissions

@@ -7,18 +7,22 @@ For local development and testing.
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = 'django-insecure-upg-system-dev-key-change-in-production-123456789'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-upg-system-dev-key-change-in-production-123456789')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
 
 
 # Application definition
@@ -91,15 +95,15 @@ WSGI_APPLICATION = 'upg_system.wsgi.application'
 
 # Database Configuration
 
-# MySQL Configuration (Active)
+# Database Configuration (from environment variables)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'upg_management_system',
-        'USER': 'root',
-        'PASSWORD': '',  # XAMPP default (no password)
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.mysql'),
+        'NAME': os.getenv('DB_NAME', 'upg_management_system'),
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '3306'),
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
@@ -139,20 +143,20 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Africa/Nairobi'
+TIME_ZONE = os.getenv('TIME_ZONE', 'Africa/Nairobi')
 USE_I18N = True
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = '/static/'
+STATIC_URL = os.getenv('STATIC_URL', '/static/')
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files
-MEDIA_URL = '/media/'
+MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
@@ -170,22 +174,22 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Email Configuration (for development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Email Configuration
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
 # SMS Configuration
 # Africa's Talking API (Primary SMS provider for Kenya)
-AFRICAS_TALKING_API_KEY = ''  # Set in production
-AFRICAS_TALKING_USERNAME = 'sandbox'  # Change to production username
-SMS_SENDER_ID = 'UPG_SYS'
+AFRICAS_TALKING_API_KEY = os.getenv('AFRICAS_TALKING_API_KEY', '')
+AFRICAS_TALKING_USERNAME = os.getenv('AFRICAS_TALKING_USERNAME', 'sandbox')
+SMS_SENDER_ID = os.getenv('SMS_SENDER_ID', 'UPG_SYS')
 
 # Twilio API (Fallback SMS provider)
-TWILIO_ACCOUNT_SID = ''  # Set in production
-TWILIO_AUTH_TOKEN = ''   # Set in production
-TWILIO_PHONE_NUMBER = '' # Set in production
+TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE_NUMBER = os.getenv('TWILIO_PHONE_NUMBER', '')
 
 # SMS Settings
-SMS_ENABLED = True
+SMS_ENABLED = os.getenv('SMS_ENABLED', 'True').lower() in ('true', '1', 'yes')
 SMS_BACKEND = 'core.sms.SMSService'  # Can be changed for testing
 
 # Session Configuration

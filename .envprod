@@ -1,0 +1,40 @@
+# Django Environment Variables - PRODUCTION
+# Production configuration for Village Enterprise Ultra-Poor Graduation Management System
+
+# Security
+SECRET_KEY=django-insecure-upg-system-dev-key-change-in-production-123456789
+DEBUG=False
+
+# Allowed hosts (comma-separated)
+ALLOWED_HOSTS=69.30.235.220,localhost,127.0.0.1,0.0.0.0
+
+# Database Configuration - Production MySQL
+DB_ENGINE=django.db.backends.mysql
+DB_NAME=upg_management_system
+DB_USER=justhomesapp
+DB_PASSWORD=Bcdefa!234
+DB_HOST=localhost
+DB_PORT=3306
+
+# SMS Configuration - Africa's Talking
+AFRICAS_TALKING_API_KEY=
+AFRICAS_TALKING_USERNAME=sandbox
+
+# SMS Configuration - Twilio (Fallback)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
+# SMS Settings
+SMS_ENABLED=True
+SMS_SENDER_ID=UPG_SYS
+
+# Email Configuration
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+# Time Zone
+TIME_ZONE=Africa/Nairobi
+
+# Static/Media Files
+STATIC_URL=/static/
+MEDIA_URL=/media/

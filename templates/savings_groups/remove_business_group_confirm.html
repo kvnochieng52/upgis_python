@@ -25,7 +25,7 @@
                         <h6>Business Group Details:</h6>
                         <p class="mb-1"><strong>Name:</strong> {{ business_group.name }}</p>
                         <p class="mb-1"><strong>Business Type:</strong> {{ business_group.business_type|default:"Not specified" }}</p>
-                        <p class="mb-0"><strong>Members:</strong> {{ business_group.member_count|default:0 }}</p>
+                        <p class="mb-0"><strong>Members:</strong> {{ business_group.members.count }}</p>
                     </div>
 
                     <div class="alert alert-warning">

@@ -18,6 +18,9 @@
             <a href="{% url 'training:log_phone_nudge' %}" class="btn btn-info btn-sm">
                 <i class="fas fa-phone"></i> Log Phone Call
             </a>
+            <a href="{% url 'upg_grants:application_list' %}" class="btn btn-warning btn-sm">
+                <i class="fas fa-hand-holding-usd"></i> Apply for Grant
+            </a>
             <a href="{% url 'training:create_mentoring_report' %}" class="btn btn-success btn-sm">
                 <i class="fas fa-plus"></i> Create Report
             </a>
@@ -102,7 +105,7 @@
 
     <div class="row">
         <!-- Recent Activities -->
-        <div class="col-lg-6">
+        <div class="col-lg-12">
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title">
@@ -131,41 +134,6 @@
                     </div>
                     {% else %}
                     <p class="text-muted text-center py-3">No recent visits</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">
-                        <i class="fas fa-phone"></i> Recent Phone Nudges
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if recent_phone_nudges %}
-                    <div class="list-group list-group-flush">
-                        {% for nudge in recent_phone_nudges %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">{{ nudge.household.name }}</h6>
-                                    <p class="mb-1">{{ nudge.get_nudge_type_display }}</p>
-                                    <small class="text-muted">
-                                        {{ nudge.call_date|date:"M d, Y H:i" }} - {{ nudge.duration_minutes }} min
-                                        {% if user_role != 'mentor' %}- {{ nudge.mentor.get_full_name }}{% endif %}
-                                    </small>
-                                </div>
-                                <span class="badge bg-{% if nudge.successful_contact %}success{% else %}danger{% endif %}">
-                                    {% if nudge.successful_contact %}Connected{% else %}No Answer{% endif %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted text-center py-3">No recent phone nudges</p>
                     {% endif %}
                 </div>
             </div>
@@ -284,6 +252,97 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Available Grants for Mentors -->
+    {% if user_role == 'mentor' and available_grants %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="card-title text-white mb-0">
+                        <i class="fas fa-hand-holding-usd"></i> Available Grants - Apply on Behalf of Households
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-info-circle"></i> These are the available grant opportunities you can apply for on behalf of your assigned households.
+                    </p>
+
+                    <!-- Active Programs -->
+                    {% if available_grants.programs %}
+                    <h6 class="text-primary mb-3">Active Programs</h6>
+                    <div class="row mb-4">
+                        {% for program in available_grants.programs %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-primary">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ program.name }}</h6>
+                                    <p class="card-text text-muted small">{{ program.description|truncatewords:20 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-success">Active</span>
+                                        <small class="text-muted">
+                                            {% if program.start_date %}Started: {{ program.start_date|date:"M Y" }}{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Grant Types -->
+                    <h6 class="text-primary mb-3">Available Grant Types</h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Grant Type</th>
+                                    <th>Description</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grant_code, grant_name in available_grants.grant_types %}
+                                <tr>
+                                    <td><strong>{{ grant_name }}</strong></td>
+                                    <td>
+                                        {% if grant_code == 'startup' %}
+                                            Initial business startup capital for new household enterprises
+                                        {% elif grant_code == 'expansion' %}
+                                            Funding to expand existing household businesses
+                                        {% elif grant_code == 'equipment' %}
+                                            Equipment and tools for household business operations
+                                        {% elif grant_code == 'training' %}
+                                            Skills training and capacity building support
+                                        {% elif grant_code == 'emergency' %}
+                                            Emergency assistance for household crisis situations
+                                        {% elif grant_code == 'other' %}
+                                            Other grant types based on specific household needs
+                                        {% else %}
+                                            Grant support for household development
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'upg_grants:application_create_universal' %}?grant_type={{ grant_code }}"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-plus"></i> Apply
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Select a household from your assigned villages, then choose the appropriate grant type to submit an application.
                     </div>
                 </div>
             </div>

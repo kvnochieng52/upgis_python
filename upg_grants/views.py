@@ -91,6 +91,15 @@ def grant_application_list(request):
         ('pr', 'PR Grant'),
     ] + list(HouseholdGrantApplication.GRANT_TYPE_CHOICES)
 
+    # Get available grants for mentors and field associates
+    available_grants = None
+    if user.role in ['mentor', 'field_associate']:
+        active_programs = Program.objects.filter(status='active')
+        available_grants = {
+            'programs': active_programs,
+            'grant_types': HouseholdGrantApplication.GRANT_TYPE_CHOICES,
+        }
+
     context = {
         'applications': all_grants,
         'page_title': 'All Grant Applications',
@@ -101,20 +110,68 @@ def grant_application_list(request):
         'grant_type_filter': grant_type_filter,
         'status_choices': HouseholdGrantApplication.STATUS_CHOICES,
         'grant_type_choices': grant_type_choices,
+        'available_grants': available_grants,
     }
     return render(request, 'upg_grants/application_list.html', context)
 
 
 @login_required
-def grant_application_create(request, household_id):
-    """Create a new grant application for a household"""
-    household = get_object_or_404(Household, id=household_id)
+def grant_application_create(request, household_id=None):
+    """Create a new grant application for household, business group, or savings group"""
     user = request.user
 
     # Check permissions
     if user.role not in ['mentor', 'field_associate', 'ict_admin', 'me_staff']:
         messages.error(request, 'You do not have permission to create grant applications.')
-        return redirect('households:household_detail', pk=household_id)
+        return redirect('dashboard:dashboard')
+
+    # Handle both URL parameter and GET parameters
+    applicant_type = request.GET.get('applicant_type')
+    applicant_id = request.GET.get('applicant_id')
+    grant_type_param = request.GET.get('grant_type')
+
+    household = None
+    business_group = None
+    savings_group = None
+    applicant_name = ""
+
+    # If called with household_id (old style)
+    if household_id:
+        household = get_object_or_404(Household, id=household_id)
+        applicant_name = household.name
+    # New style with GET parameters
+    elif applicant_type and applicant_id:
+        from business_groups.models import BusinessGroup
+        from savings_groups.models import BusinessSavingsGroup
+
+        if applicant_type == 'household':
+            household = get_object_or_404(Household, id=applicant_id)
+            applicant_name = household.name
+        elif applicant_type == 'business_group':
+            business_group = get_object_or_404(BusinessGroup, id=applicant_id)
+            applicant_name = business_group.name
+        elif applicant_type == 'savings_group':
+            savings_group = get_object_or_404(BusinessSavingsGroup, id=applicant_id)
+            applicant_name = savings_group.name
+    # If only grant_type is provided, show household selection page
+    elif grant_type_param:
+        # Get households for mentor/field associate
+        if user.role in ['mentor', 'field_associate'] and hasattr(user, 'profile'):
+            households = Household.objects.filter(
+                village__in=user.profile.assigned_villages.all()
+            ).select_related('village')
+        else:
+            households = Household.objects.all().select_related('village')
+
+        context = {
+            'households': households,
+            'grant_type': grant_type_param,
+            'page_title': f'Select Household for {dict(HouseholdGrantApplication.GRANT_TYPE_CHOICES).get(grant_type_param, "Grant")} Application',
+        }
+        return render(request, 'upg_grants/select_household.html', context)
+    else:
+        messages.error(request, 'No applicant specified.')
+        return redirect('grants:grants_dashboard')
 
     if request.method == 'POST':
         grant_type = request.POST.get('grant_type')
@@ -140,6 +197,8 @@ def grant_application_create(request, household_id):
 
         application = HouseholdGrantApplication.objects.create(
             household=household,
+            business_group=business_group,
+            savings_group=savings_group,
             submitted_by=user,
             program=program,
             grant_type=grant_type,
@@ -160,8 +219,12 @@ def grant_application_create(request, household_id):
 
     context = {
         'household': household,
+        'business_group': business_group,
+        'savings_group': savings_group,
+        'applicant_name': applicant_name,
         'programs': programs,
-        'page_title': f'Apply for Grant - {household.name}',
+        'page_title': f'Apply for Grant - {applicant_name}',
+        'preselected_grant_type': grant_type_param,  # Pre-fill grant type from URL
     }
     return render(request, 'upg_grants/application_create.html', context)
 
@@ -252,3 +315,27 @@ def pending_reviews(request):
         'can_review': can_review,
     }
     return render(request, 'upg_grants/pending_reviews.html', context)
+
+
+@login_required
+def available_grants_list(request):
+    """List all available open grants for application"""
+    user = request.user
+
+    # Check permissions - mentors and field associates can apply for grants
+    if user.role not in ['mentor', 'field_associate', 'ict_admin', 'me_staff']:
+        messages.error(request, 'You do not have permission to view available grants.')
+        return redirect('dashboard:dashboard')
+
+    # Get all active programs for grant opportunities
+    active_programs = Program.objects.filter(status='active')
+
+    # For household grants, these are always available for application
+    grant_types = HouseholdGrantApplication.GRANT_TYPE_CHOICES
+
+    context = {
+        'active_programs': active_programs,
+        'grant_types': grant_types,
+        'page_title': 'Available Grants',
+    }
+    return render(request, 'upg_grants/available_grants.html', context)

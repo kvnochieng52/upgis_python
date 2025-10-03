@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import JsonResponse
 from .models import Program, ProgramApplication, ProgramBeneficiary
 from households.models import Household
 
@@ -283,3 +284,70 @@ def program_toggle_status(request, pk):
             messages.error(request, 'Invalid status provided.')
 
     return redirect('programs:program_detail', pk=program.pk)
+
+
+@login_required
+def approve_application(request, application_id):
+    """Approve a program application"""
+    from django.utils import timezone
+
+    user_role = getattr(request.user, 'role', None)
+    if not (request.user.is_superuser or user_role in ['county_executive', 'ict_admin', 'me_staff']):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    application = get_object_or_404(ProgramApplication, id=application_id)
+
+    if request.method == 'POST':
+        try:
+            application.status = 'approved'
+            application.reviewed_by = request.user
+            application.reviewed_at = timezone.now()
+            application.save()
+
+            # Create program beneficiary entry
+            ProgramBeneficiary.objects.get_or_create(
+                program=application.program,
+                household=application.household,
+                defaults={
+                    'enrollment_date': timezone.now().date(),
+                    'status': 'active'
+                }
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Application for {application.household.name} has been approved'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def reject_application(request, application_id):
+    """Reject a program application"""
+    from django.utils import timezone
+
+    user_role = getattr(request.user, 'role', None)
+    if not (request.user.is_superuser or user_role in ['county_executive', 'ict_admin', 'me_staff']):
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    application = get_object_or_404(ProgramApplication, id=application_id)
+
+    if request.method == 'POST':
+        try:
+            application.status = 'rejected'
+            application.reviewed_by = request.user
+            application.reviewed_at = timezone.now()
+            application.rejection_reason = request.POST.get('reason', '')
+            application.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Application for {application.household.name} has been rejected'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)

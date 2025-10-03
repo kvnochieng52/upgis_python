@@ -275,13 +275,53 @@ function viewApplication(applicationId) {
 
 function approveApplication(applicationId) {
     if (confirm('Are you sure you want to approve this application?')) {
-        alert(`Approve application ${applicationId} - functionality to be implemented`);
+        fetch(`/programs/applications/${applicationId}/approve/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(data.error || 'Failed to approve application');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while approving the application');
+        });
     }
 }
 
 function rejectApplication(applicationId) {
-    if (confirm('Are you sure you want to reject this application?')) {
-        alert(`Reject application ${applicationId} - functionality to be implemented`);
+    const reason = prompt('Please provide a reason for rejection (optional):');
+    if (reason !== null) {  // User clicked OK (even if empty)
+        fetch(`/programs/applications/${applicationId}/reject/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `reason=${encodeURIComponent(reason)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert(data.error || 'Failed to reject application');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while rejecting the application');
+        });
     }
 }
 </script>

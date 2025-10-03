@@ -30,5 +30,6 @@ urlpatterns = [
     # Visit Logging URLs
     path('mentoring/visits/', mentoring_views.visit_list, name='visit_list'),
     path('mentoring/visits/log/', mentoring_views.log_visit, name='log_visit'),
+    path('mentoring/phone-nudges/', mentoring_views.phone_nudge_list, name='phone_nudge_list'),
     path('mentoring/phone-nudges/log/', mentoring_views.log_phone_nudge, name='log_phone_nudge'),
 ]

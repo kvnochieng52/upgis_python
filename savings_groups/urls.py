@@ -16,4 +16,9 @@ urlpatterns = [
     # Business group management
     path('<int:pk>/add-business-group/', views.add_business_group, name='add_business_group'),
     path('<int:pk>/remove-business-group/<int:bg_id>/', views.remove_business_group, name='remove_business_group'),
+
+    # Savings management
+    path('<int:pk>/record-savings/', views.record_savings, name='record_savings'),
+    path('<int:pk>/savings-report/', views.savings_report, name='savings_report'),
+    path('<int:pk>/export-savings/', views.export_savings_data, name='export_savings_data'),
 ]
