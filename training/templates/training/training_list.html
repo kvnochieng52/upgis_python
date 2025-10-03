@@ -343,13 +343,28 @@ function editTraining(trainingId) {
     window.location.href = `/training/${trainingId}/edit/`;
 }
 
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 function startTraining(trainingId) {
     if (confirm('Are you sure you want to start this training? This will change its status to Active.')) {
         // AJAX call to start training
         fetch(`/training/${trainingId}/start/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-CSRFToken': getCookie('csrftoken'),
                 'Content-Type': 'application/json',
             },
         })
@@ -374,7 +389,7 @@ function completeTraining(trainingId) {
         fetch(`/training/${trainingId}/complete/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-CSRFToken': getCookie('csrftoken'),
                 'Content-Type': 'application/json',
             },
         })
@@ -436,7 +451,7 @@ function deleteTraining(trainingId, trainingName) {
         fetch(`/training/${trainingId}/delete/`, {
             method: 'DELETE',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-CSRFToken': getCookie('csrftoken'),
                 'Content-Type': 'application/json',
             },
         })
@@ -530,7 +545,7 @@ function createTraining() {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'X-CSRFToken': getCookie('csrftoken'),
         },
     })
     .then(response => response.json())

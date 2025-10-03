@@ -232,7 +232,7 @@
                         </a>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <a href="{% url 'business_groups:business_group_list' %}" class="btn btn-outline-danger w-100">
+                        <a href="{% url 'business_groups:group_list' %}" class="btn btn-outline-danger w-100">
                             <i class="fas fa-briefcase"></i><br>Business Groups
                         </a>
                     </div>
@@ -744,12 +744,27 @@ function addHouseholdToTraining() {
     const trainingId = trainingSelect.value;
     const householdId = householdSelect.value;
 
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     // Submit via AJAX
     fetch(`/training/${trainingId}/add-household/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            'X-CSRFToken': getCookie('csrftoken')
         },
         body: `household_id=${householdId}`
     })
@@ -778,12 +793,27 @@ function submitVisit() {
         return;
     }
 
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     // Submit the form
     fetch("{% url 'training:log_visit' %}", {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            'X-CSRFToken': getCookie('csrftoken')
         }
     })
     .then(response => {
